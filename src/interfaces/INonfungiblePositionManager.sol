@@ -9,7 +9,7 @@ pragma solidity ^0.8.13;
 ///         transferred and authorized.
 /// @dev    Key difference from Uniswap V3: `tickSpacing` (int24) replaces `fee` (uint24)
 ///         in both MintParams and positions() return values.
-interface INonFungiblePositionManager {
+interface INonfungiblePositionManager {
     // ─── Events ───────────────────────────────────────────────────────────────
 
     /// @notice Emitted when liquidity is increased for a position NFT
