@@ -19,3 +19,7 @@ skills/
 # Node
 node_modules/
 .next/
+
+
+broadcast/
+package-lock.json
