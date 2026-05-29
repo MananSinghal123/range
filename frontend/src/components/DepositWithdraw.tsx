@@ -164,19 +164,12 @@ export function DepositWithdraw({
           <p className="text-sm text-center" style={{ color: "var(--text-3)" }}>Connect your wallet to continue</p>
         )}
 
-        {isConnected && actions.needsApproval && (
-          <button type="button" onClick={actions.handleApprove} disabled={actions.isProcessing}
-            className="btn-red w-full py-3 rounded-lg text-sm font-semibold flex items-center justify-center gap-2 cursor-pointer">
-            {actions.isProcessing
-              ? <><Loader2 className="w-4 h-4 animate-spin" /> Approving…</>
-              : `Allow ${actions.inputSymbol}`}
-          </button>
-        )}
-
-        {isConnected && !actions.needsApproval && (
+        {isConnected && (
           <button type="button" onClick={actions.handleAction} disabled={actions.isDisabled}
             className="btn-red w-full py-3 rounded-lg text-sm font-semibold flex items-center justify-center gap-2 cursor-pointer">
-            {actions.isProcessing
+            {actions.txState === "approving"
+              ? <><Loader2 className="w-4 h-4 animate-spin" /> Approving…</>
+              : actions.txState === "pending" || actions.isProcessing
               ? <><Loader2 className="w-4 h-4 animate-spin" /> Confirming…</>
               : tab === "deposit" ? `Deposit ${actions.inputSymbol}` : "Withdraw"}
           </button>

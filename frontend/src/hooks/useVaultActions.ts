@@ -125,34 +125,29 @@ export function useVaultActions({
       ? "Vault has not opened its first position yet."
       : null;
 
-  async function handleApprove() {
-    if (!tokenAddress || !address) return;
-    setTxState("approving");
-    try {
-      const hash = await writeContractAsync({
-        address: tokenAddress,
-        abi: ERC20_ABI,
-        functionName: "approve",
-        args: [VAULT_ADDRESS, maxUint256],
-      });
-      setTxHash(hash);
-    } catch {
-      setTxState("error");
-      setTimeout(() => setTxState("idle"), 4000);
-    }
-  }
-
   async function handleAction() {
     if (!amountBig || !address) return;
-    setTxState("pending");
     try {
       let hash: `0x${string}` | undefined;
+
+      // Auto-approve before deposit if allowance is insufficient
+      if (needsApproval && tokenAddress) {
+        setTxState("approving");
+        const approveHash = await writeContractAsync({
+          address: tokenAddress,
+          abi: ERC20_ABI,
+          functionName: "approve",
+          args: [VAULT_ADDRESS, maxUint256],
+        });
+        await publicClient?.waitForTransactionReceipt({ hash: approveHash });
+      }
+
+      setTxState("pending");
 
       switch (tab) {
         case "deposit":
           switch (depositToken) {
             case "MUSD":
-              // Simulate first — catches revert reasons before sending tx
               await publicClient?.simulateContract({
                 address: VAULT_ADDRESS,
                 abi: VAULT_ABI,
@@ -166,7 +161,6 @@ export function useVaultActions({
                 functionName: "deposit",
                 args: [amountBig, address],
               });
-              console.log("Deposit hash:", hash);
               break;
             default:
               hash = await writeContractAsync({
@@ -178,7 +172,6 @@ export function useVaultActions({
           }
           break;
         case "withdraw":
-          // redeem(shares, receiver, owner) — 3 args per ABI
           hash = await writeContractAsync({
             address: VAULT_ADDRESS,
             abi: VAULT_ABI,
@@ -210,7 +203,6 @@ export function useVaultActions({
     needsApproval,
     blockingMessage,
     // Handlers
-    handleApprove,
     handleAction,
   };
 }

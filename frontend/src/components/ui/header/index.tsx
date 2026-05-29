@@ -18,7 +18,7 @@ export function Header() {
             className="font-semibold text-sm tracking-tight"
             style={{ color: "var(--text)" }}
           >
-            Mezo Rebalancer
+            Range
           </span>
         </div>
         <WalletSection />

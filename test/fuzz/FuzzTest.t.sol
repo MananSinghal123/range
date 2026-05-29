@@ -191,11 +191,11 @@ contract FuzzTest is BaseTest {
 
         vm.prank(alice);
         vault.deposit(firstDeposit, alice);
-        uint256 priceBefore = vault.sharePrice();
+        uint256 priceBefore = _sharePrice();
 
         vm.prank(bob);
         vault.deposit(secondDeposit, bob);
-        uint256 priceAfter = vault.sharePrice();
+        uint256 priceAfter = _sharePrice();
 
         // Share price should not increase just from a new deposit (dilution-free)
         assertApproxEqAbs(

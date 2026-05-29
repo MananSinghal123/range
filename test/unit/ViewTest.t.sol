@@ -109,40 +109,40 @@ contract ViewTest is UnitBase {
     // ─── sharePrice ───────────────────────────────────────────────────────────
 
     function test_sharePrice_zeroWhenNoSupply() public view {
-        assertEq(vault.sharePrice(), 0);
+        assertEq(_sharePrice(), 0);
     }
 
     function test_sharePrice_nonZeroAfterDeposit() public {
         _initialDeposit(INITIAL_DEPOSIT);
-        assertGt(vault.sharePrice(), 0);
+        assertGt(_sharePrice(), 0);
     }
 
     function test_sharePrice_scaledToDecimals0() public {
         _initialDeposit(10e8);
         // totalAssets = 10e8, totalSupply = 10e8 (first deposit)
         // sharePrice = totalAssets * 1e8 / totalSupply = 1e8
-        assertEq(vault.sharePrice(), 1e8);
+        assertEq(_sharePrice(), 1e8);
     }
 
     function test_sharePrice_stableAfterPositionInit() public {
         _initialDeposit(INITIAL_DEPOSIT);
-        uint256 priceBefore = vault.sharePrice();
+        uint256 priceBefore = _sharePrice();
 
         (int24 lo, int24 hi) = _defaultRange();
         _initSmallPosition(lo, hi); // small liquidity avoids overflow in getAmountsForLiquidity
 
-        uint256 priceAfter = vault.sharePrice();
+        uint256 priceAfter = _sharePrice();
         assertApproxEqRel(priceAfter, priceBefore, 0.01e18); // 1% tolerance
     }
 
     function test_sharePrice_unchangedAfterSecondDeposit() public {
         _initialDeposit(INITIAL_DEPOSIT);
-        uint256 priceBefore = vault.sharePrice();
+        uint256 priceBefore = _sharePrice();
 
         vm.prank(bob);
         vault.deposit(5e8, bob);
 
-        uint256 priceAfter = vault.sharePrice();
+        uint256 priceAfter = _sharePrice();
         assertApproxEqRel(priceAfter, priceBefore, 0.01e18);
     }
 

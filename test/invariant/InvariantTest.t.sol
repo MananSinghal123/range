@@ -182,7 +182,7 @@ contract InvariantTest is BaseTest {
         if (supply <= _DEAD_SHARES) return;
 
         assertGt(
-            vault.sharePrice(),
+            _sharePrice(),
             0,
             "INV-I: share price is zero while real shares exist"
         );
@@ -271,7 +271,7 @@ contract InvariantTest is BaseTest {
         console.log("  tokenId:     ", vault.tokenId());
         console.log("  totalSupply: ", vault.totalSupply());
         console.log("  totalAssets: ", vault.totalAssets());
-        console.log("  sharePrice:  ", vault.sharePrice());
+        console.log("  sharePrice:  ", _sharePrice());
         console.log("  paused:      ", vault.paused());
 
         console.log("");

@@ -2,6 +2,7 @@
 pragma solidity ^0.8.13;
 
 import "forge-std/Test.sol";
+import "@openzeppelin/contracts/utils/math/Math.sol";
 import "../src/RebalancerVault.sol";
 import "./mocks/MockERC20.sol";
 import "./mocks/MockCLPool.sol";
@@ -107,6 +108,19 @@ abstract contract BaseTest is Test {
     }
 
     // ── Test helpers ──────────────────────────────────────────────────────────
+
+    /// @dev Mirrors the removed vault.sharePrice() — computed from public getters
+    ///      so all tests continue to work without individual changes.
+    function _sharePrice() internal view returns (uint256) {
+        uint256 supply = vault.totalSupply();
+        if (supply == 0) return 0;
+        return Math.mulDiv(
+            vault.totalAssets(),
+            10 ** vault.decimals(),
+            supply,
+            Math.Rounding.Floor
+        );
+    }
 
     /// @dev Seeds vault with dead shares via alice's first deposit.
     ///      Advances one block so subsequent withdraw/redeem can pass the same-block guard.

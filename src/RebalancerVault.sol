@@ -125,6 +125,8 @@ contract RebalancerVault is ReentrancyGuard, ERC4626 {
     error TimelockActive();
     error InvalidPoolPrice();
     error PriceDeviatedFromTwap();
+    error NothingToMint();
+    error SameBlock();
 
     // ─── Modifiers ────────────────────────────────────────────────────────────
     modifier onlyOwner() {
@@ -430,7 +432,7 @@ contract RebalancerVault is ReentrancyGuard, ERC4626 {
         nonReentrant
         returns (uint256 shares)
     {
-        require(block.number > lastDepositBlock[owner_], "same block");
+        if (block.number <= lastDepositBlock[owner_]) revert SameBlock();
         if (assets == 0) revert ZeroAmount();
         if (receiver == address(0)) revert ZeroAddress();
         if (assets > maxWithdraw(owner_)) revert ExceedsMaxWithdraw();
@@ -491,7 +493,7 @@ contract RebalancerVault is ReentrancyGuard, ERC4626 {
         address receiver,
         address owner_
     ) public override whenNotPaused nonReentrant returns (uint256 assets) {
-        require(block.number > lastDepositBlock[owner_], "same block");
+        if (block.number <= lastDepositBlock[owner_]) revert SameBlock();
         if (shares == 0) revert ZeroAmount();
         if (receiver == address(0)) revert ZeroAddress();
         if (shares > maxRedeem(owner_)) revert ExceedsMaxRedeem();
@@ -822,7 +824,7 @@ contract RebalancerVault is ReentrancyGuard, ERC4626 {
 
         uint256 balance0 = token0.balanceOf(address(this));
         uint256 balance1 = token1.balanceOf(address(this));
-        require(balance0 > 0 || balance1 > 0, "Vault: nothing to mint");
+        if (balance0 == 0 && balance1 == 0) revert NothingToMint();
 
         // Step 6: Mint new position — slippage floor computed on-chain, not caller-supplied.
         _ensureAllowance(token0, address(positionManager), balance0);
@@ -927,40 +929,58 @@ contract RebalancerVault is ReentrancyGuard, ERC4626 {
         return tick < lo || tick >= hi;
     }
 
-    /// @notice Price of one vault share expressed in token0 units (scaled to 1e18)
-    function sharePrice() external view returns (uint256) {
-        uint256 supply = totalSupply();
-        if (supply == 0) return 0;
-        return
-            Math.mulDiv(
-                _totalVaultValueInToken0(),
-                10 ** decimals0,
-                supply,
-                Math.Rounding.Floor
-            );
-    }
-
-    /// @notice Returns all key vault metrics in a single call to minimise RPC round-trips.
-    function getVaultMetrics()
+    /// @notice Returns the optimal swap direction and amount for the next rebalance.
+    ///         Call this off-chain before rebalance() — the keeper passes the result through
+    ///         without needing to replicate any fixed-point math.
+    function computeRebalanceParams(
+        StrategyType strategy
+    )
         external
         view
-        returns (
-            uint256 tvl,
+        positionExists
+        returns (bool swapZeroForOne, uint256 swapAmount)
+    {
+        (
+            ,
+            ,
+            ,
+            ,
+            ,
             int24 tickLower,
             int24 tickUpper,
-            uint256 _rebalanceCount,
-            uint256 fees0Earned,
-            uint256 fees1Earned
-        )
-    {
-        tvl = _totalVaultValueInToken0();
-        _rebalanceCount = rebalanceCount;
-        fees0Earned = totalFees0Earned;
-        fees1Earned = totalFees1Earned;
-        if (tokenId != 0) {
-            (, , , , , tickLower, tickUpper, , , , , ) = positionManager
-                .positions(tokenId);
-        }
+            uint128 liquidity,
+            ,
+            ,
+            ,
+
+        ) = positionManager.positions(tokenId);
+
+        (uint160 sqrtPriceX96, , , , , ) = pool.slot0();
+
+        (uint256 amount0, uint256 amount1) = LiquidityAmounts
+            .getAmountsForLiquidity(
+                sqrtPriceX96,
+                TickMath.getSqrtRatioAtTick(tickLower),
+                TickMath.getSqrtRatioAtTick(tickUpper),
+                liquidity
+            );
+
+        int24 twapTick = _getTwapTick();
+        int24 spacing = pool.tickSpacing();
+        int24 halfWidth = strategyWidths[strategy];
+
+        return
+            _computeOptimalSwap(
+                sqrtPriceX96,
+                TickMath.getSqrtRatioAtTick(
+                    _floor(twapTick - halfWidth, spacing)
+                ),
+                TickMath.getSqrtRatioAtTick(
+                    _ceil(twapTick + halfWidth, spacing)
+                ),
+                amount0,
+                amount1
+            );
     }
 
     /// @dev Remove a proportional fraction (shares/supply) of the active position's liquidity.
@@ -1217,6 +1237,47 @@ contract RebalancerVault is ReentrancyGuard, ERC4626 {
         if (deviation < 0) deviation = -deviation;
         if (deviation > int256(uint256(int256(maxTwapDeviationTicks))))
             revert PriceDeviatedFromTwap();
+    }
+
+    /// @dev Computes the optimal one-sided swap to maximise liquidity in [sqrtA, sqrtB].
+    ///      Uses LiquidityAmounts to compare token0 vs token1 liquidity contributions,
+    ///      then solves for the keep amount that equalises them.
+    function _computeOptimalSwap(
+        uint160 sqrtP,
+        uint160 sqrtA,
+        uint160 sqrtB,
+        uint256 balance0,
+        uint256 balance1
+    ) internal pure returns (bool swapZeroForOne, uint256 swapAmount) {
+        if (sqrtP <= sqrtA) return (false, balance1);
+        if (sqrtP >= sqrtB) return (true, balance0);
+
+        uint128 l0 = LiquidityAmounts.getLiquidityForAmount0(
+            sqrtP,
+            sqrtB,
+            balance0
+        );
+        uint128 l1 = LiquidityAmounts.getLiquidityForAmount1(
+            sqrtA,
+            sqrtP,
+            balance1
+        );
+
+        if (l0 >= l1) {
+            uint256 keep0 = LiquidityAmounts.getAmount0ForLiquidity(
+                sqrtP,
+                sqrtB,
+                l1
+            );
+            return (true, balance0 > keep0 ? balance0 - keep0 : 0);
+        } else {
+            uint256 keep1 = LiquidityAmounts.getAmount1ForLiquidity(
+                sqrtA,
+                sqrtP,
+                l0
+            );
+            return (false, balance1 > keep1 ? balance1 - keep1 : 0);
+        }
     }
 
     function _computeMintSlippage(

@@ -94,12 +94,12 @@ contract IntegrationTest is BaseTest {
         // Alice deposits first
         vm.prank(alice);
         vault.deposit(10e8, alice);
-        uint256 priceAfterAlice = vault.sharePrice();
+        uint256 priceAfterAlice = _sharePrice();
 
         // Bob deposits same amount
         vm.prank(bob);
         vault.deposit(10e8, bob);
-        uint256 priceAfterBob = vault.sharePrice();
+        uint256 priceAfterBob = _sharePrice();
 
         // Share price should be approximately equal (within rounding)
         assertApproxEqRel(priceAfterAlice, priceAfterBob, 1e15, "price stable");
@@ -107,7 +107,7 @@ contract IntegrationTest is BaseTest {
         // Carol deposits — same check
         vm.prank(carol);
         vault.deposit(10e8, carol);
-        uint256 priceAfterCarol = vault.sharePrice();
+        uint256 priceAfterCarol = _sharePrice();
         assertApproxEqRel(
             priceAfterBob,
             priceAfterCarol,

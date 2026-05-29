@@ -1,14 +1,14 @@
 "use client";
 
 import { useReadContracts, useReadContract, useAccount } from "wagmi";
-import { VAULT_ADDRESS, VAULT_ABI, ERC20_ABI } from "@/lib/contracts";
+import { VAULT_ADDRESS, VAULT_ABI, VAULT_LENS_ADDRESS, VAULT_LENS_ABI, ERC20_ABI } from "@/lib/contracts";
 
 export function useVaultState() {
   const results = useReadContracts({
     contracts: [
       { address: VAULT_ADDRESS, abi: VAULT_ABI, functionName: "totalAssets" },
       { address: VAULT_ADDRESS, abi: VAULT_ABI, functionName: "totalSupply" },
-      { address: VAULT_ADDRESS, abi: VAULT_ABI, functionName: "sharePrice" },
+      { address: VAULT_LENS_ADDRESS, abi: VAULT_LENS_ABI, functionName: "sharePrice", args: [VAULT_ADDRESS] },
       { address: VAULT_ADDRESS, abi: VAULT_ABI, functionName: "paused" },
       {
         address: VAULT_ADDRESS,
@@ -88,9 +88,10 @@ export function usePoolState(initialized: boolean) {
 
 export function useVaultMetrics(initialized: boolean) {
   const result = useReadContract({
-    address: VAULT_ADDRESS,
-    abi: VAULT_ABI,
+    address: VAULT_LENS_ADDRESS,
+    abi: VAULT_LENS_ABI,
     functionName: "getVaultMetrics",
+    args: [VAULT_ADDRESS],
     query: { enabled: initialized, refetchInterval: 15_000 },
   });
 

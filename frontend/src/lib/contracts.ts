@@ -3,6 +3,35 @@ export const VAULT_ADDRESS = (
   "0x0000000000000000000000000000000000000000"
 ) as `0x${string}`;
 
+export const VAULT_LENS_ADDRESS = (
+  process.env.NEXT_PUBLIC_VAULT_LENS_ADDRESS ||
+  "0x0000000000000000000000000000000000000000"
+) as `0x${string}`;
+
+export const VAULT_LENS_ABI = [
+  {
+    name: "sharePrice",
+    type: "function",
+    stateMutability: "view",
+    inputs: [{ name: "vault", type: "address" }],
+    outputs: [{ name: "", type: "uint256" }],
+  },
+  {
+    name: "getVaultMetrics",
+    type: "function",
+    stateMutability: "view",
+    inputs: [{ name: "vault", type: "address" }],
+    outputs: [
+      { name: "tvl", type: "uint256" },
+      { name: "tickLower", type: "int24" },
+      { name: "tickUpper", type: "int24" },
+      { name: "rebalanceCount", type: "uint256" },
+      { name: "fees0Earned", type: "uint256" },
+      { name: "fees1Earned", type: "uint256" },
+    ],
+  },
+] as const;
+
 export const VAULT_ABI = [
   // ── View Functions ─────────────────────────────────────────────────────────
   {
@@ -14,13 +43,6 @@ export const VAULT_ABI = [
   },
   {
     name: "totalSupply",
-    type: "function",
-    stateMutability: "view",
-    inputs: [],
-    outputs: [{ name: "", type: "uint256" }],
-  },
-  {
-    name: "sharePrice",
     type: "function",
     stateMutability: "view",
     inputs: [],
@@ -193,20 +215,6 @@ export const VAULT_ABI = [
       { name: "owner_", type: "address" },
     ],
     outputs: [{ name: "", type: "uint256" }],
-  },
-  {
-    name: "getVaultMetrics",
-    type: "function",
-    stateMutability: "view",
-    inputs: [],
-    outputs: [
-      { name: "tvl", type: "uint256" },
-      { name: "tickLower", type: "int24" },
-      { name: "tickUpper", type: "int24" },
-      { name: "rebalanceCount", type: "uint256" },
-      { name: "fees0Earned", type: "uint256" },
-      { name: "fees1Earned", type: "uint256" },
-    ],
   },
   {
     name: "rebalanceCount",

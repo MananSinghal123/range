@@ -10,150 +10,14 @@ import { vaultState, networkState } from "./state.js";
 import { isNetworkError, isRetryableError, jitter } from "./errors.js";
 import { logInfo, logWarn, logErr } from "./logger.js";
 
-const Q96 = 2n ** 96n;
-const Q192 = 2n ** 192n;
-
-// Configurable slippage tolerance in basis points (default 0.5%)
-const SLIPPAGE_BPS = BigInt(process.env.SLIPPAGE_BPS ?? "50");
-
-// Minimal ABI for the three view calls needed to compute swap params
-const VAULT_QUERY_ABI = [
-  "function getPoolState() view returns (uint160 sqrtPriceX96, int24 tick)",
-  "function getPosition() view returns (address, address, int24 tickSpacing, int24 tickLower, int24 tickUpper, uint128 liquidity)",
-  "function strategyWidths(uint8) view returns (int24)",
+const COMPUTE_PARAMS_ABI = [
+  "function computeRebalanceParams(uint8 strategy) view returns (bool swapZeroForOne, uint256 swapAmount)",
 ];
 
-function applySlippage(amount) {
-  return (amount * (10000n - SLIPPAGE_BPS)) / 10000n;
-}
-
-// Approximate sqrt(1.0001^tick) in Q96 format using floating-point.
-// Relative error ≈ 1e-9 — sufficient for swap sizing; exact bit-manipulation not needed here.
-function sqrtRatioAtTick(tick) {
-  const sqrtRatio = Math.exp(Math.log(1.0001) * tick * 0.5);
-  const hi = Math.floor(sqrtRatio * 2 ** 48);
-  return BigInt(hi) * 2n ** 48n;
-}
-
-// Mirrors the contract's _floor and _ceil helpers
-function floorTick(tick, spacing) {
-  return Math.floor(tick / spacing) * spacing;
-}
-function ceilTick(tick, spacing) {
-  const floored = floorTick(tick, spacing);
-  return floored === tick ? tick : floored + spacing;
-}
-
-// Mirror of LiquidityAmounts.getAmountsForLiquidity (Q96 fixed-point BigInt)
-function getAmountsForLiquidity(sqrtP, sqrtA, sqrtB, liquidity) {
-  if (liquidity === 0n) return { amount0: 0n, amount1: 0n };
-  if (sqrtP < sqrtA) sqrtP = sqrtA;
-  if (sqrtP > sqrtB) sqrtP = sqrtB;
-  const amount0 = (liquidity * Q96 * (sqrtB - sqrtP)) / (sqrtP * sqrtB);
-  const amount1 = (liquidity * (sqrtP - sqrtA)) / Q96;
-  return { amount0, amount1 };
-}
-
-// Compute the optimal one-sided swap to maximise liquidity in [sqrtA, sqrtB] at price sqrtP.
-//
-// Derivation: each token provides independent liquidity L.
-//   L0 = balance0 * sqrtP * sqrtB / (Q96 * (sqrtB - sqrtP))
-//   L1 = balance1 * Q96 / (sqrtP - sqrtA)
-// Maximise deployed liquidity by equalising L0 and L1.
-// Cross-multiply to compare without division, then solve for the amount to swap.
-function computeOptimalSwap(sqrtP, sqrtA, sqrtB, balance0, balance1) {
-  // Price outside range — swap entire balance to the single required token
-  if (sqrtP <= sqrtA) return { swapZeroForOne: false, swapAmount: balance1 };
-  if (sqrtP >= sqrtB) return { swapZeroForOne: true, swapAmount: balance0 };
-
-  const lhs = balance0 * sqrtP * sqrtB * (sqrtP - sqrtA); // proportional to L0
-  const rhs = balance1 * Q96 * Q96 * (sqrtB - sqrtP); // proportional to L1
-
-  if (lhs >= rhs) {
-    // Excess token0 → swap token0 for token1
-    const keep0 =
-      (balance1 * Q96 * Q96 * (sqrtB - sqrtP)) /
-      ((sqrtP - sqrtA) * sqrtP * sqrtB);
-    return {
-      swapZeroForOne: true,
-      swapAmount: balance0 > keep0 ? balance0 - keep0 : 0n,
-    };
-  } else {
-    // Excess token1 → swap token1 for token0
-    const keep1 =
-      (balance0 * sqrtP * sqrtB * (sqrtP - sqrtA)) /
-      (Q96 * Q96 * (sqrtB - sqrtP));
-    return {
-      swapZeroForOne: false,
-      swapAmount: balance1 > keep1 ? balance1 - keep1 : 0n,
-    };
-  }
-}
-
-// Build all eight rebalance() arguments from on-chain state.
 async function computeRebalanceArgs(vaultAddr, strategy) {
-  const query = new ethers.Contract(vaultAddr, VAULT_QUERY_ABI, provider);
-
-  const [poolState, position, halfWidth] = await Promise.all([
-    query.getPoolState(),
-    query.getPosition(),
-    query.strategyWidths(strategy),
-  ]);
-
-  const sqrtP = poolState.sqrtPriceX96;
-  const currentTick = Number(poolState.tick);
-  const tickSpacing = Number(position[2]); // _tickSpacing
-  const tickLower = Number(position[3]); // _tickLower
-  const tickUpper = Number(position[4]); // _tickUpper
-  const liquidity = position[5]; // _liquidity
-
-  // New range the contract will mint (mirrors _floor / _ceil in Solidity)
-  const newTickLower = floorTick(currentTick - Number(halfWidth), tickSpacing);
-  const newTickUpper = ceilTick(currentTick + Number(halfWidth), tickSpacing);
-
-  // Estimate token amounts freed when removing the current position
-  const currSqrtA = sqrtRatioAtTick(tickLower);
-  const currSqrtB = sqrtRatioAtTick(tickUpper);
-  const { amount0, amount1 } = getAmountsForLiquidity(
-    sqrtP,
-    currSqrtA,
-    currSqrtB,
-    liquidity,
-  );
-
-  const amount0MinRemove = applySlippage(amount0);
-  const amount1MinRemove = applySlippage(amount1);
-
-  // Optimal swap for the new range
-  const newSqrtA = sqrtRatioAtTick(newTickLower);
-  const newSqrtB = sqrtRatioAtTick(newTickUpper);
-  const { swapZeroForOne, swapAmount } = computeOptimalSwap(
-    sqrtP,
-    newSqrtA,
-    newSqrtB,
-    amount0,
-    amount1,
-  );
-
-  // Minimum swap output at current spot price minus slippage tolerance
-  let swapAmountOutMin = 0n;
-  if (swapAmount > 0n) {
-    const expectedOut = swapZeroForOne
-      ? (swapAmount * sqrtP * sqrtP) / Q192 // token0 → token1
-      : (swapAmount * Q192) / (sqrtP * sqrtP); // token1 → token0
-    swapAmountOutMin = applySlippage(expectedOut);
-  }
-
-  return [
-    swapZeroForOne,
-    swapAmount,
-    swapAmountOutMin,
-    amount0MinRemove,
-    amount1MinRemove,
-    0n,
-    0n,
-    strategy,
-  ];
+  const query = new ethers.Contract(vaultAddr, COMPUTE_PARAMS_ABI, provider);
+  const [swapZeroForOne, swapAmount] = await query.computeRebalanceParams(strategy);
+  return [swapZeroForOne, swapAmount, strategy];
 }
 
 // ── Core functions ─────────────────────────────────────────────────────────────
@@ -240,7 +104,7 @@ export async function checkAndRebalance(watched) {
     );
     logInfo(
       watched.label,
-      `swap: zeroForOne=${rebalanceArgs[0]} amount=${rebalanceArgs[1]} outMin=${rebalanceArgs[2]}`,
+      `swap: zeroForOne=${rebalanceArgs[0]} amount=${rebalanceArgs[1]}`,
     );
 
     const receipt = await buildAndSendTx(
