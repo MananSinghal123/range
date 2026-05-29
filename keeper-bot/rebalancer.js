@@ -1,13 +1,16 @@
 import { ethers } from "ethers";
 import { provider, signer } from "./provider.js";
-import { MAX_GAS_PRICE, MAX_GAS_GWEI, POLL_INTERVAL_MS, RebalancerVaultABI } from "./config.js";
+import {
+  MAX_GAS_PRICE,
+  MAX_GAS_GWEI,
+  POLL_INTERVAL_MS,
+  RebalancerVaultABI,
+} from "./config.js";
 import { vaultState, networkState } from "./state.js";
 import { isNetworkError, isRetryableError, jitter } from "./errors.js";
 import { logInfo, logWarn, logErr } from "./logger.js";
 
-// ── Swap-param computation ─────────────────────────────────────────────────────
-
-const Q96  = 2n ** 96n;
+const Q96 = 2n ** 96n;
 const Q192 = 2n ** 192n;
 
 // Configurable slippage tolerance in basis points (default 0.5%)
@@ -29,7 +32,7 @@ function applySlippage(amount) {
 function sqrtRatioAtTick(tick) {
   const sqrtRatio = Math.exp(Math.log(1.0001) * tick * 0.5);
   const hi = Math.floor(sqrtRatio * 2 ** 48);
-  return BigInt(hi) * (2n ** 48n);
+  return BigInt(hi) * 2n ** 48n;
 }
 
 // Mirrors the contract's _floor and _ceil helpers
@@ -61,19 +64,29 @@ function getAmountsForLiquidity(sqrtP, sqrtA, sqrtB, liquidity) {
 function computeOptimalSwap(sqrtP, sqrtA, sqrtB, balance0, balance1) {
   // Price outside range — swap entire balance to the single required token
   if (sqrtP <= sqrtA) return { swapZeroForOne: false, swapAmount: balance1 };
-  if (sqrtP >= sqrtB) return { swapZeroForOne: true,  swapAmount: balance0 };
+  if (sqrtP >= sqrtB) return { swapZeroForOne: true, swapAmount: balance0 };
 
-  const lhs = balance0 * sqrtP * sqrtB * (sqrtP - sqrtA);        // proportional to L0
-  const rhs = balance1 * Q96 * Q96 * (sqrtB - sqrtP);            // proportional to L1
+  const lhs = balance0 * sqrtP * sqrtB * (sqrtP - sqrtA); // proportional to L0
+  const rhs = balance1 * Q96 * Q96 * (sqrtB - sqrtP); // proportional to L1
 
   if (lhs >= rhs) {
     // Excess token0 → swap token0 for token1
-    const keep0 = (balance1 * Q96 * Q96 * (sqrtB - sqrtP)) / ((sqrtP - sqrtA) * sqrtP * sqrtB);
-    return { swapZeroForOne: true, swapAmount: balance0 > keep0 ? balance0 - keep0 : 0n };
+    const keep0 =
+      (balance1 * Q96 * Q96 * (sqrtB - sqrtP)) /
+      ((sqrtP - sqrtA) * sqrtP * sqrtB);
+    return {
+      swapZeroForOne: true,
+      swapAmount: balance0 > keep0 ? balance0 - keep0 : 0n,
+    };
   } else {
     // Excess token1 → swap token1 for token0
-    const keep1 = (balance0 * sqrtP * sqrtB * (sqrtP - sqrtA)) / (Q96 * Q96 * (sqrtB - sqrtP));
-    return { swapZeroForOne: false, swapAmount: balance1 > keep1 ? balance1 - keep1 : 0n };
+    const keep1 =
+      (balance0 * sqrtP * sqrtB * (sqrtP - sqrtA)) /
+      (Q96 * Q96 * (sqrtB - sqrtP));
+    return {
+      swapZeroForOne: false,
+      swapAmount: balance1 > keep1 ? balance1 - keep1 : 0n,
+    };
   }
 }
 
@@ -87,21 +100,26 @@ async function computeRebalanceArgs(vaultAddr, strategy) {
     query.strategyWidths(strategy),
   ]);
 
-  const sqrtP       = poolState.sqrtPriceX96;
+  const sqrtP = poolState.sqrtPriceX96;
   const currentTick = Number(poolState.tick);
-  const tickSpacing = Number(position[2]);   // _tickSpacing
-  const tickLower   = Number(position[3]);   // _tickLower
-  const tickUpper   = Number(position[4]);   // _tickUpper
-  const liquidity   = position[5];           // _liquidity
+  const tickSpacing = Number(position[2]); // _tickSpacing
+  const tickLower = Number(position[3]); // _tickLower
+  const tickUpper = Number(position[4]); // _tickUpper
+  const liquidity = position[5]; // _liquidity
 
   // New range the contract will mint (mirrors _floor / _ceil in Solidity)
   const newTickLower = floorTick(currentTick - Number(halfWidth), tickSpacing);
-  const newTickUpper = ceilTick(currentTick  + Number(halfWidth), tickSpacing);
+  const newTickUpper = ceilTick(currentTick + Number(halfWidth), tickSpacing);
 
   // Estimate token amounts freed when removing the current position
   const currSqrtA = sqrtRatioAtTick(tickLower);
   const currSqrtB = sqrtRatioAtTick(tickUpper);
-  const { amount0, amount1 } = getAmountsForLiquidity(sqrtP, currSqrtA, currSqrtB, liquidity);
+  const { amount0, amount1 } = getAmountsForLiquidity(
+    sqrtP,
+    currSqrtA,
+    currSqrtB,
+    liquidity,
+  );
 
   const amount0MinRemove = applySlippage(amount0);
   const amount1MinRemove = applySlippage(amount1);
@@ -109,29 +127,47 @@ async function computeRebalanceArgs(vaultAddr, strategy) {
   // Optimal swap for the new range
   const newSqrtA = sqrtRatioAtTick(newTickLower);
   const newSqrtB = sqrtRatioAtTick(newTickUpper);
-  const { swapZeroForOne, swapAmount } = computeOptimalSwap(sqrtP, newSqrtA, newSqrtB, amount0, amount1);
+  const { swapZeroForOne, swapAmount } = computeOptimalSwap(
+    sqrtP,
+    newSqrtA,
+    newSqrtB,
+    amount0,
+    amount1,
+  );
 
   // Minimum swap output at current spot price minus slippage tolerance
   let swapAmountOutMin = 0n;
   if (swapAmount > 0n) {
     const expectedOut = swapZeroForOne
-      ? (swapAmount * sqrtP * sqrtP) / Q192   // token0 → token1
+      ? (swapAmount * sqrtP * sqrtP) / Q192 // token0 → token1
       : (swapAmount * Q192) / (sqrtP * sqrtP); // token1 → token0
     swapAmountOutMin = applySlippage(expectedOut);
   }
 
-  return [swapZeroForOne, swapAmount, swapAmountOutMin, amount0MinRemove, amount1MinRemove, 0n, 0n, strategy];
+  return [
+    swapZeroForOne,
+    swapAmount,
+    swapAmountOutMin,
+    amount0MinRemove,
+    amount1MinRemove,
+    0n,
+    0n,
+    strategy,
+  ];
 }
 
 // ── Core functions ─────────────────────────────────────────────────────────────
 
 export async function buildAndSendTx(contract, method, args, gasPrice, label) {
-  const txRequest   = await contract[method].populateTransaction(...args);
-  const gasEstimate = await provider.estimateGas({ ...txRequest, from: signer.address });
+  const txRequest = await contract[method].populateTransaction(...args);
+  const gasEstimate = await provider.estimateGas({
+    ...txRequest,
+    from: signer.address,
+  });
 
   const response = await signer.sendTransaction({
     ...txRequest,
-    nonce:    await provider.getTransactionCount(signer.address, "pending"),
+    nonce: await provider.getTransactionCount(signer.address, "pending"),
     gasLimit: (gasEstimate * 120n) / 100n,
     gasPrice,
   });
@@ -142,15 +178,23 @@ export async function buildAndSendTx(contract, method, args, gasPrice, label) {
 
 export async function preflight() {
   const bal = await provider.getBalance(signer.address);
-  logInfo("preflight", `keeper=${signer.address} native balance=${ethers.formatEther(bal)}`);
-  if (bal === 0n) throw new Error("Keeper has zero native balance — top up before running");
+  logInfo(
+    "preflight",
+    `keeper=${signer.address} native balance=${ethers.formatEther(bal)}`,
+  );
+  if (bal === 0n)
+    throw new Error("Keeper has zero native balance — top up before running");
 }
 
 export async function checkAndRebalance(watched) {
   const vs = vaultState[watched.vault];
   if (Date.now() < vs.nextAttemptAt) return;
 
-  const vault = new ethers.Contract(watched.vault, RebalancerVaultABI, provider);
+  const vault = new ethers.Contract(
+    watched.vault,
+    RebalancerVaultABI,
+    provider,
+  );
 
   try {
     const tokenId = await vault.tokenId();
@@ -175,17 +219,29 @@ export async function checkAndRebalance(watched) {
       return;
     }
 
-    logInfo(watched.label, `OUT OF RANGE — triggering rebalance (strategy=${watched.strategy})`);
+    logInfo(
+      watched.label,
+      `OUT OF RANGE — triggering rebalance (strategy=${watched.strategy})`,
+    );
 
-    const feeData  = await provider.getFeeData();
+    const feeData = await provider.getFeeData();
     const gasPrice = feeData.gasPrice ?? feeData.maxFeePerGas ?? MAX_GAS_PRICE;
     if (gasPrice > MAX_GAS_PRICE) {
-      logWarn(watched.label, `gas too high (${ethers.formatUnits(gasPrice, "gwei")} gwei > ${MAX_GAS_GWEI}) — skipping`);
+      logWarn(
+        watched.label,
+        `gas too high (${ethers.formatUnits(gasPrice, "gwei")} gwei > ${MAX_GAS_GWEI}) — skipping`,
+      );
       return;
     }
 
-    const rebalanceArgs = await computeRebalanceArgs(watched.vault, watched.strategy);
-    logInfo(watched.label, `swap: zeroForOne=${rebalanceArgs[0]} amount=${rebalanceArgs[1]} outMin=${rebalanceArgs[2]}`);
+    const rebalanceArgs = await computeRebalanceArgs(
+      watched.vault,
+      watched.strategy,
+    );
+    logInfo(
+      watched.label,
+      `swap: zeroForOne=${rebalanceArgs[0]} amount=${rebalanceArgs[1]} outMin=${rebalanceArgs[2]}`,
+    );
 
     const receipt = await buildAndSendTx(
       vault.connect(signer),
@@ -201,14 +257,19 @@ export async function checkAndRebalance(watched) {
     vs.lastRebalanceAt = Date.now();
     vs.consecutiveFailures = 0;
     vs.nextAttemptAt = 0;
-    logInfo(watched.label, `rebalance #${vs.totalRebalances} confirmed in block ${receipt.blockNumber}`);
-
+    logInfo(
+      watched.label,
+      `rebalance #${vs.totalRebalances} confirmed in block ${receipt.blockNumber}`,
+    );
   } catch (err) {
     vs.consecutiveFailures += 1;
-    const baseBackoff = Number(POLL_INTERVAL_MS) * (2 ** Math.min(vs.consecutiveFailures, 6));
-    vs.nextAttemptAt = Date.now() + jitter(Math.min(baseBackoff, 5 * 60 * 1000));
+    const baseBackoff =
+      Number(POLL_INTERVAL_MS) * 2 ** Math.min(vs.consecutiveFailures, 6);
+    vs.nextAttemptAt =
+      Date.now() + jitter(Math.min(baseBackoff, 5 * 60 * 1000));
     if (isNetworkError(err)) networkState.failures += 1;
     logErr(watched.label, err instanceof Error ? err.message : String(err));
-    if (!isRetryableError(err)) logErr(watched.label, "non-retryable — manual attention may be required");
+    if (!isRetryableError(err))
+      logErr(watched.label, "non-retryable — manual attention may be required");
   }
 }

@@ -146,44 +146,49 @@ export function useVaultActions({
     if (!amountBig || !address) return;
     setTxState("pending");
     try {
-      let hash: `0x${string}`;
+      let hash: `0x${string}` | undefined;
 
-      if (tab === "deposit") {
-        if (depositToken === "MUSD") {
-          // Simulate first — catches revert reasons before sending tx
-          await publicClient?.simulateContract({
-            address: VAULT_ADDRESS,
-            abi: VAULT_ABI,
-            functionName: "deposit",
-            args: [amountBig, address],
-            account: address,
-          });
+      switch (tab) {
+        case "deposit":
+          switch (depositToken) {
+            case "MUSD":
+              // Simulate first — catches revert reasons before sending tx
+              await publicClient?.simulateContract({
+                address: VAULT_ADDRESS,
+                abi: VAULT_ABI,
+                functionName: "deposit",
+                args: [amountBig, address],
+                account: address,
+              });
+              hash = await writeContractAsync({
+                address: VAULT_ADDRESS,
+                abi: VAULT_ABI,
+                functionName: "deposit",
+                args: [amountBig, address],
+              });
+              console.log("Deposit hash:", hash);
+              break;
+            default:
+              hash = await writeContractAsync({
+                address: VAULT_ADDRESS,
+                abi: VAULT_ABI,
+                functionName: "depositToken1",
+                args: [amountBig, address],
+              });
+          }
+          break;
+        case "withdraw":
+          // redeem(shares, receiver, owner) — 3 args per ABI
           hash = await writeContractAsync({
             address: VAULT_ADDRESS,
             abi: VAULT_ABI,
-            functionName: "deposit",
-            args: [amountBig, address],
+            functionName: "redeem",
+            args: [amountBig, address, address],
           });
-          console.log("Deposit hash:", hash);
-        } else {
-          hash = await writeContractAsync({
-            address: VAULT_ADDRESS,
-            abi: VAULT_ABI,
-            functionName: "depositToken1",
-            args: [amountBig, address],
-          });
-        }
-      } else {
-        // redeem(shares, receiver, owner) — 3 args per ABI
-        hash = await writeContractAsync({
-          address: VAULT_ADDRESS,
-          abi: VAULT_ABI,
-          functionName: "redeem",
-          args: [amountBig, address, address],
-        });
+          break;
       }
 
-      setTxHash(hash);
+      if (hash) setTxHash(hash);
     } catch (err) {
       console.error("Transaction failed:", err);
       setTxState("error");

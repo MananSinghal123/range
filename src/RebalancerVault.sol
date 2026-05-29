@@ -173,24 +173,23 @@ contract RebalancerVault is ReentrancyGuard, ERC4626 {
         strategyWidths[StrategyType.TIGHT] = 300;
         strategyWidths[StrategyType.MEDIUM] = 700;
         strategyWidths[StrategyType.WIDE] = 1200;
+
+        performanceFeeBps = 1000;
+        feeRecipient = _owner;
     }
 
-    //audited
     function decimals() public view override(ERC4626) returns (uint8) {
         return decimals0;
     }
 
-    //audited
     function asset() public view override returns (address assetTokenAddress) {
         return address(token0);
     }
 
-    //audited
     function totalAssets() public view override(ERC4626) returns (uint256) {
         return _totalVaultValueInToken0();
     }
 
-    //audited
     function convertToShares(
         uint256 assets
     ) public view override returns (uint256 shares) {
@@ -201,7 +200,6 @@ contract RebalancerVault is ReentrancyGuard, ERC4626 {
         return Math.mulDiv(assets, supply, ta, Math.Rounding.Floor);
     }
 
-    //audited
     function convertToAssets(
         uint256 shares
     ) public view override returns (uint256 assets) {
@@ -217,7 +215,6 @@ contract RebalancerVault is ReentrancyGuard, ERC4626 {
                 );
     }
 
-    //audited
     /// @inheritdoc IERC4626
     function maxDeposit(
         address
@@ -225,7 +222,6 @@ contract RebalancerVault is ReentrancyGuard, ERC4626 {
         return _isDepositAllowed() ? type(uint256).max : 0;
     }
 
-    //audited
     function previewDeposit(
         uint256 assets
     ) public view override(ERC4626) returns (uint256) {
@@ -241,7 +237,6 @@ contract RebalancerVault is ReentrancyGuard, ERC4626 {
         return Math.mulDiv(assets, supply, ta, Math.Rounding.Floor);
     }
 
-    //audited
     function deposit(
         uint256 assets,
         address receiver
@@ -313,7 +308,6 @@ contract RebalancerVault is ReentrancyGuard, ERC4626 {
         return Math.mulDiv(depositValToken0, supply, ta, Math.Rounding.Floor);
     }
 
-    //to-be-audited
     function depositToken1(
         uint256 token1Amount,
         address receiver
@@ -352,13 +346,11 @@ contract RebalancerVault is ReentrancyGuard, ERC4626 {
         emit Token1Deposited(msg.sender, receiver, token1Amount, shares);
     }
 
-    //audited
     /// @inheritdoc IERC4626
     function maxMint(address) public view override(ERC4626) returns (uint256) {
         return _isDepositAllowed() ? type(uint256).max : 0;
     }
 
-    //audited
     function previewMint(
         uint256 shares
     ) public view override(ERC4626) returns (uint256) {
@@ -373,7 +365,6 @@ contract RebalancerVault is ReentrancyGuard, ERC4626 {
         return Math.mulDiv(shares, ta, supply, Math.Rounding.Ceil);
     }
 
-    //audited
     function mint(
         uint256 shares,
         address receiver
@@ -404,7 +395,6 @@ contract RebalancerVault is ReentrancyGuard, ERC4626 {
         emit Deposit(msg.sender, receiver, assets, shares);
     }
 
-    //audited
     /// @inheritdoc IERC4626
     function maxWithdraw(
         address owner_
@@ -413,7 +403,6 @@ contract RebalancerVault is ReentrancyGuard, ERC4626 {
         return convertToAssets(balanceOf(owner_));
     }
 
-    //audited
     function previewWithdraw(
         uint256 assets
     ) public view override(ERC4626) returns (uint256) {
@@ -427,7 +416,6 @@ contract RebalancerVault is ReentrancyGuard, ERC4626 {
         return Math.mulDiv(assets, supply, ta, Math.Rounding.Ceil);
     }
 
-    //audited
     /// @inheritdoc IERC4626
     /// @dev Slippage floors computed on-chain from TWAP + slippageBps.
     ///      Use withdrawWithSlippage() for caller-supplied min amounts.
@@ -482,7 +470,6 @@ contract RebalancerVault is ReentrancyGuard, ERC4626 {
         emit Withdraw(msg.sender, receiver, owner_, assets, shares);
     }
 
-    //audited
     /// @inheritdoc IERC4626
     function maxRedeem(
         address owner_
@@ -490,7 +477,6 @@ contract RebalancerVault is ReentrancyGuard, ERC4626 {
         return paused ? 0 : balanceOf(owner_);
     }
 
-    //audited
     /// @inheritdoc IERC4626
     /// @dev Rounds DOWN per spec (mulDiv floors) — caller gets no more than their fair share.
     function previewRedeem(
@@ -499,7 +485,6 @@ contract RebalancerVault is ReentrancyGuard, ERC4626 {
         return convertToAssets(shares);
     }
 
-    //audited
     /// @inheritdoc IERC4626
     function redeem(
         uint256 shares,
@@ -555,7 +540,6 @@ contract RebalancerVault is ReentrancyGuard, ERC4626 {
         emit Withdraw(msg.sender, receiver, owner_, assets, shares);
     }
 
-    //audited
     function transferOwnership(address _newOwner) external onlyOwner {
         if (_newOwner == address(0)) revert ZeroAddress();
         if (_newOwner == owner) revert SameOwner();
@@ -563,7 +547,6 @@ contract RebalancerVault is ReentrancyGuard, ERC4626 {
         emit OwnershipTransferStarted(owner, _newOwner);
     }
 
-    //audited
     function acceptOwnership() external {
         if (msg.sender != pendingOwner) revert NotPendingOwner();
         emit OwnershipTransferred(owner, pendingOwner);
@@ -571,20 +554,17 @@ contract RebalancerVault is ReentrancyGuard, ERC4626 {
         pendingOwner = address(0);
     }
 
-    //audited
     function setOperator(address _operator) external onlyOwner {
         if (_operator == address(0)) revert ZeroAddress();
         operator = _operator;
         emit OperatorUpdated(_operator);
     }
 
-    //audited
     function setPaused(bool _paused) external onlyOwner {
         paused = _paused;
         emit VaultPaused(_paused);
     }
 
-    //audited
     function proposePerformanceFee(
         uint256 bps,
         address recipient
@@ -605,7 +585,6 @@ contract RebalancerVault is ReentrancyGuard, ERC4626 {
         emit PerformanceFeeUpdated(pendingFeeBps, pendingFeeRecipient);
     }
 
-    //audited
     function sweepToken(address token, address to) external onlyOwner {
         if (token == address(token0) || token == address(token1))
             revert InvalidToken();
@@ -646,7 +625,6 @@ contract RebalancerVault is ReentrancyGuard, ERC4626 {
         slippageBps = bps;
     }
 
-    //audited
     function initializePosition(
         int24 tickLower,
         int24 tickUpper,
@@ -685,7 +663,6 @@ contract RebalancerVault is ReentrancyGuard, ERC4626 {
         emit Rebalanced(0, newTokenId, tickLower, tickUpper, newLiquidity);
     }
 
-    //audited
     function collectFees(
         uint256 amount0Min,
         uint256 amount1Min
@@ -746,7 +723,6 @@ contract RebalancerVault is ReentrancyGuard, ERC4626 {
         if (fee0 > 0 || fee1 > 0) emit FeesCollected(fee0, fee1, feeRecipient);
     }
 
-    //audited
     /// @dev All slippage floors (remove, swap, mint) are computed on-chain from TWAP +
     ///      slippageBps — keepers cannot pass zero min-amounts.
     ///      The new range is anchored on the TWAP tick, not spot, to prevent a flash-loan
@@ -892,7 +868,6 @@ contract RebalancerVault is ReentrancyGuard, ERC4626 {
         );
     }
 
-    //to-be-audited
     function onERC721Received(
         address,
         address,
@@ -902,7 +877,6 @@ contract RebalancerVault is ReentrancyGuard, ERC4626 {
         return this.onERC721Received.selector;
     }
 
-    //audited
     /// @notice Returns current pool price and tick from slot0.
     /// @dev WARNING: slot0 is the instantaneous price and can be manipulated
     ///      within a single block via flash loans. Do NOT use for pricing decisions.
@@ -915,7 +889,6 @@ contract RebalancerVault is ReentrancyGuard, ERC4626 {
         (sqrtPriceX96, tick, , , , ) = pool.slot0();
     }
 
-    //audited
     function getPosition()
         external
         view
@@ -946,7 +919,6 @@ contract RebalancerVault is ReentrancyGuard, ERC4626 {
         _tickSpacing = pool.tickSpacing();
     }
 
-    //audited
     function isOutOfRange() external view positionExists returns (bool) {
         (, int24 tick, , , , ) = pool.slot0();
         (, , , , , int24 lo, int24 hi, , , , , ) = positionManager.positions(
@@ -955,7 +927,6 @@ contract RebalancerVault is ReentrancyGuard, ERC4626 {
         return tick < lo || tick >= hi;
     }
 
-    //audited
     /// @notice Price of one vault share expressed in token0 units (scaled to 1e18)
     function sharePrice() external view returns (uint256) {
         uint256 supply = totalSupply();
@@ -1032,7 +1003,6 @@ contract RebalancerVault is ReentrancyGuard, ERC4626 {
         );
     }
 
-    //audited
     function _totalVaultValueInToken0() internal view returns (uint256) {
         uint256 bal0 = token0.balanceOf(address(this));
         uint256 bal1 = token1.balanceOf(address(this));
@@ -1077,7 +1047,6 @@ contract RebalancerVault is ReentrancyGuard, ERC4626 {
         return Math.mulDiv(temp, sqrtPrice, uint256(1) << 96);
     }
 
-    // audited
     /// @dev Returns (amount0, amount1) of principal locked in the vault's active LP position.
     function _getPositionAmounts()
         internal
@@ -1111,7 +1080,6 @@ contract RebalancerVault is ReentrancyGuard, ERC4626 {
         );
     }
 
-    //audited
     function _getTokensOwed()
         internal
         view
@@ -1159,7 +1127,6 @@ contract RebalancerVault is ReentrancyGuard, ERC4626 {
         );
     }
 
-    //audited
     function _deductPerformanceFee(
         uint256 earned0,
         uint256 earned1
