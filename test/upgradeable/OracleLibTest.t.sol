@@ -2,6 +2,7 @@
 pragma solidity ^0.8.13;
 
 import "forge-std/Test.sol";
+import "@uniswap/v3-core/contracts/libraries/TickMath.sol";
 import {OracleLib} from "../../src/libraries/OracleLib.sol";
 import {MockCLPool} from "../mocks/MockCLPool.sol";
 
@@ -32,5 +33,12 @@ contract OracleLibTest is Test {
 
     function test_isDepositAllowed_falseWhenPaused() public view {
         assertFalse(OracleLib.isDepositAllowed(address(pool), 300, 200, true));
+    }
+
+    function test_getTwapSqrtPrice_matchesTickMathAtTwapTick() public view {
+        assertEq(
+            OracleLib.getTwapSqrtPrice(address(pool), 300),
+            TickMath.getSqrtRatioAtTick(TICK)
+        );
     }
 }

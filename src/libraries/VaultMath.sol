@@ -13,27 +13,27 @@ library VaultMath {
     error InvalidPoolPrice();
 
     /// @dev Floor-divide tick by spacing, handling negative ticks correctly.
-    function floor(int24 tick, int24 spacing) public pure returns (int24) {
+    function floor(int24 tick, int24 spacing) internal pure returns (int24) {
         int24 compressed = tick / spacing;
         if (tick < 0 && tick % spacing != 0) compressed--;
         return compressed * spacing;
     }
 
     /// @dev Ceiling-divide tick by spacing, handling negative ticks correctly.
-    function ceil(int24 tick, int24 spacing) public pure returns (int24) {
+    function ceil(int24 tick, int24 spacing) internal pure returns (int24) {
         int24 floored = floor(tick, spacing);
         return (floored == tick) ? tick : floored + spacing;
     }
 
     /// @dev token0 = token1 * 2^192 / sqrtP^2. Reverts on zero price.
-    function token1ToToken0(uint256 amount1, uint160 sqrtPriceX96) public pure returns (uint256) {
+    function token1ToToken0(uint256 amount1, uint160 sqrtPriceX96) internal pure returns (uint256) {
         if (sqrtPriceX96 == 0) revert InvalidPoolPrice();
         uint256 sqrtPrice = uint256(sqrtPriceX96);
         return Math.mulDiv(amount1, uint256(1) << 192, Math.mulDiv(sqrtPrice, sqrtPrice, 1));
     }
 
     /// @dev token1 = token0 * sqrtP^2 / 2^192.
-    function token0ToToken1(uint256 amount0, uint160 sqrtPriceX96) public pure returns (uint256) {
+    function token0ToToken1(uint256 amount0, uint160 sqrtPriceX96) internal pure returns (uint256) {
         uint256 sqrtPrice = uint256(sqrtPriceX96);
         uint256 temp = Math.mulDiv(amount0, sqrtPrice, uint256(1) << 96);
         return Math.mulDiv(temp, sqrtPrice, uint256(1) << 96);
