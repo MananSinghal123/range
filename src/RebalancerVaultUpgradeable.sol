@@ -4,7 +4,7 @@ pragma solidity ^0.8.13;
 import {Initializable} from "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import {ERC20Upgradeable} from "@openzeppelin/contracts-upgradeable/token/ERC20/ERC20Upgradeable.sol";
 import {ERC4626Upgradeable} from "@openzeppelin/contracts-upgradeable/token/ERC20/extensions/ERC4626Upgradeable.sol";
-import {ReentrancyGuardTransient} from "@openzeppelin/contracts-upgradeable/utils/ReentrancyGuardTransient.sol";
+import {ReentrancyGuardTransient} from "@openzeppelin/contracts/utils/ReentrancyGuardTransient.sol";
 import {IERC20Metadata} from "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
 
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
@@ -13,7 +13,11 @@ import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol
 import {ICLPool} from "./interfaces/ICLPool.sol";
 import {INonfungiblePositionManager} from "./interfaces/INonfungiblePositionManager.sol";
 import {ICLSwapRouter} from "./interfaces/ICLSwapRouter.sol";
+import {IDexAdapter} from "./interfaces/IDexAdapter.sol";
+import {IStrategy} from "./interfaces/IStrategy.sol";
 import {VaultStorageLib} from "./libraries/VaultStorageLib.sol";
+
+import {TickMath} from "@uniswap/v3-core/contracts/libraries/TickMath.sol";
 
 contract RebalancerVaultUpgradeable is
     Initializable,
@@ -162,7 +166,6 @@ contract RebalancerVaultUpgradeable is
 
         __ERC20_init(p.name, p.symbol);
         __ERC4626_init(IERC20(ICLPool(p.pool).token0()));
-        __ReentrancyGuard_init();
 
         VaultStorageLib.VaultStorage storage s = _s();
 
@@ -360,6 +363,111 @@ contract RebalancerVaultUpgradeable is
         uint256 /* amount1Min */
     ) external {
         revert("unimplemented");
+    }
+
+    // ─── Adapter / strategy plumbing ────────────────────────────────────────────
+    //
+    // Reads are normal external view calls (STATICCALL) to the adapter address.
+    // Writes are DELEGATECALLed into the (stateless) adapter so they execute in the
+    // vault's context — the vault keeps custody of tokens, the NFT, approvals, and
+    // refunds. The strategy is only ever STATICCALLed; the vault re-validates the
+    // ticks it returns before using them.
+
+    /// @dev STATICCALL: current pool price/tick via the adapter.
+    function _adapterSlot0() private view returns (uint160 sqrtPriceX96, int24 tick) {
+        return IDexAdapter(_s().dexAdapter).slot0(_s().pool);
+    }
+
+    /// @dev STATICCALL: pool tick spacing via the adapter.
+    function _adapterTickSpacing() private view returns (int24) {
+        return IDexAdapter(_s().dexAdapter).tickSpacing(_s().pool);
+    }
+
+    /// @dev STATICCALL: position data for `tokenId_` via the adapter.
+    function _adapterPositions(uint256 tokenId_)
+        private
+        view
+        returns (
+            int24 tickLower,
+            int24 tickUpper,
+            uint128 liquidity,
+            uint128 tokensOwed0,
+            uint128 tokensOwed1,
+            address t0,
+            address t1
+        )
+    {
+        return IDexAdapter(_s().dexAdapter).positions(_s().positionManager, tokenId_);
+    }
+
+    /// @dev DELEGATECALL into the adapter, bubbling up any revert reason verbatim.
+    function _delegateAdapter(bytes memory data) private returns (bytes memory) {
+        (bool ok, bytes memory ret) = _s().dexAdapter.delegatecall(data);
+        if (!ok) {
+            assembly {
+                revert(add(ret, 0x20), mload(ret))
+            }
+        }
+        return ret;
+    }
+
+    /// @dev DELEGATECALL: mint a new position. Named `_mintPosition` to avoid
+    ///      colliding with ERC20Upgradeable's internal `_mint`.
+    function _mintPosition(IDexAdapter.MintArgs memory a)
+        private
+        returns (uint256 tokenId_, uint128 liq, uint256 a0, uint256 a1)
+    {
+        bytes memory ret = _delegateAdapter(abi.encodeCall(IDexAdapter.mint, (a)));
+        return abi.decode(ret, (uint256, uint128, uint256, uint256));
+    }
+
+    /// @dev DELEGATECALL: decrease liquidity on an existing position.
+    function _decreaseLiquidity(IDexAdapter.DecreaseArgs memory a)
+        private
+        returns (uint256 a0, uint256 a1)
+    {
+        bytes memory ret = _delegateAdapter(abi.encodeCall(IDexAdapter.decreaseLiquidity, (a)));
+        return abi.decode(ret, (uint256, uint256));
+    }
+
+    /// @dev DELEGATECALL: collect owed tokens/fees from a position.
+    function _collect(IDexAdapter.CollectArgs memory a)
+        private
+        returns (uint256 a0, uint256 a1)
+    {
+        bytes memory ret = _delegateAdapter(abi.encodeCall(IDexAdapter.collect, (a)));
+        return abi.decode(ret, (uint256, uint256));
+    }
+
+    /// @dev DELEGATECALL: burn the position NFT. Named `_burnPosition` to avoid
+    ///      colliding with ERC20Upgradeable's internal `_burn`.
+    function _burnPosition(uint256 tokenId_) private {
+        _delegateAdapter(abi.encodeCall(IDexAdapter.burn, (_s().positionManager, tokenId_)));
+    }
+
+    /// @dev DELEGATECALL: single-hop exact-input swap via the router.
+    function _exactInputSingle(IDexAdapter.SwapArgs memory a) private returns (uint256 amountOut) {
+        bytes memory ret = _delegateAdapter(abi.encodeCall(IDexAdapter.exactInputSingle, (a)));
+        return abi.decode(ret, (uint256));
+    }
+
+    /// @dev STATICCALL the strategy for a range, then validate it vault-side:
+    ///      lo < hi and both within global tick bounds.
+    function _strategyRange(int24 twapTick, int24 tickSpacing_)
+        private
+        view
+        returns (int24 lo, int24 hi)
+    {
+        (lo, hi) = IStrategy(_s().strategy).computeRange(twapTick, tickSpacing_);
+        if (lo >= hi) revert InvalidRange();
+        if (lo < TickMath.MIN_TICK || hi > TickMath.MAX_TICK) revert InvalidStrategyTicks();
+    }
+
+    /// @notice Returns current pool price and tick from slot0.
+    /// @dev WARNING: slot0 is the instantaneous price and can be manipulated within a single
+    ///      block via flash loans. Do NOT use for pricing decisions. Use the TWAP for value-sensitive ops.
+    function getPoolState() external view returns (uint160 sqrtPriceX96, int24 tick) {
+        return _adapterSlot0();
     }
 
     // ─── ERC721 / ETH receive (parity with RebalancerVault.sol) ─────────────────
