@@ -1,5 +1,6 @@
 "use client";
 
+import { useRouter, useSearchParams } from "next/navigation";
 import { Header } from "@/components/ui/header";
 import { VaultStats } from "@/components/VaultStats";
 import { DepositWithdraw } from "@/components/DepositWithdraw";
@@ -7,10 +8,16 @@ import { PriceRangeCard } from "@/components/PriceRangeCard";
 import { UserPosition } from "@/components/UserPosition";
 import { RebalanceHistory } from "@/components/RebalanceHistory";
 import { Footer } from "@/components/ui/footer";
+import { StrategySelector } from "@/components/StrategySelector";
 import { useVaultPage } from "@/hooks/useVaultPage";
-
+import { STRATEGIES, resolveStrategy, type StrategyKey } from "@/lib/strategies";
 
 export default function Home() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const strategyKey = resolveStrategy(searchParams.get("strategy"));
+  const vaultAddress = STRATEGIES[strategyKey].vaultAddress;
+
   const {
     isConnected,
     sym0,
@@ -27,7 +34,11 @@ export default function Home() {
     totalFee0,
     tickLower,
     tickUpper,
-  } = useVaultPage();
+  } = useVaultPage(vaultAddress);
+
+  function handleStrategySelect(key: StrategyKey) {
+    router.push(`?strategy=${key}`);
+  }
 
   return (
     <div className="min-h-screen bg-white">
@@ -45,6 +56,9 @@ export default function Home() {
             Deposit tokens and earn trading fees automatically.
           </p>
         </div>
+
+        {/* Strategy selector */}
+        <StrategySelector selected={strategyKey} onSelect={handleStrategySelect} />
 
         {/* Stats — full width */}
         <VaultStats
@@ -64,9 +78,10 @@ export default function Home() {
 
         {/* 2-column layout */}
         <div className="grid grid-cols-1 lg:grid-cols-[1fr_360px] gap-6 items-start">
-          {/* Left: Deposit/Withdraw + Price Range (renders second on mobile) */}
+          {/* Left: Deposit/Withdraw + Price Range */}
           <div className="space-y-6 order-2 lg:order-1">
             <DepositWithdraw
+              vaultAddress={vaultAddress}
               paused={vault.paused}
               initialized={vault.initialized}
               token0Address={vault.token0Address}
@@ -96,9 +111,10 @@ export default function Home() {
             />
           </div>
 
-          {/* Right: User position + History (renders first on mobile) */}
+          {/* Right: User position + History */}
           <div className="space-y-6 order-1 lg:order-2">
             <UserPosition
+              vaultAddress={vaultAddress}
               shares={user.shares}
               symbol0={sym0}
               decimals0={d0}

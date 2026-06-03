@@ -7,6 +7,7 @@ import { formatTokenAmount } from "@/lib/utils";
 import { useVaultActions, type Tab, type DepositToken } from "@/hooks/useVaultActions";
 
 interface Props {
+  vaultAddress: `0x${string}`;
   paused?: boolean;
   initialized: boolean;
   token0Address?: `0x${string}`;
@@ -25,6 +26,7 @@ interface Props {
 }
 
 export function DepositWithdraw({
+  vaultAddress,
   paused,
   initialized,
   token0Address,
@@ -46,6 +48,7 @@ export function DepositWithdraw({
   const [amount, setAmount] = useState("");
 
   const actions = useVaultActions({
+    vaultAddress,
     tab, depositToken, amount,
     decimals0, decimals1,
     allowance0, allowance1,

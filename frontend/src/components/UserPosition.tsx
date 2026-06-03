@@ -2,9 +2,10 @@
 
 import { formatTokenAmount } from "@/lib/utils";
 import { useReadContract } from "wagmi";
-import { VAULT_ADDRESS, VAULT_ABI } from "@/lib/contracts";
+import { VAULT_ABI } from "@/lib/contracts";
 
 interface Props {
+  vaultAddress?: `0x${string}`;
   shares?: bigint;
   symbol0?: string;
   decimals0?: number;
@@ -12,6 +13,7 @@ interface Props {
 }
 
 export function UserPosition({
+  vaultAddress,
   shares,
   symbol0 = "MUSD",
   decimals0 = 18,
@@ -20,11 +22,11 @@ export function UserPosition({
   const hasShares = shares !== undefined && shares > BigInt(0);
 
   const { data: assetValue } = useReadContract({
-    address: VAULT_ADDRESS,
+    address: vaultAddress,
     abi: VAULT_ABI,
     functionName: "convertToAssets",
     args: hasShares ? [shares] : undefined,
-    query: { enabled: hasShares, refetchInterval: 10_000 },
+    query: { enabled: hasShares && !!vaultAddress, refetchInterval: 10_000 },
   });
 
   if (!isConnected || !hasShares) return null;
