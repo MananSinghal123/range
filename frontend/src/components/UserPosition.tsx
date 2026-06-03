@@ -5,7 +5,7 @@ import { useReadContract } from "wagmi";
 import { VAULT_ABI } from "@/lib/contracts";
 
 interface Props {
-  vaultAddress?: `0x${string}`;
+  vaultAddress: `0x${string}`;
   shares?: bigint;
   symbol0?: string;
   decimals0?: number;

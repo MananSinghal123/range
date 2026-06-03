@@ -1,6 +1,7 @@
 "use client";
 
 import { useRouter, useSearchParams } from "next/navigation";
+import { useCallback } from "react";
 import { Header } from "@/components/ui/header";
 import { VaultStats } from "@/components/VaultStats";
 import { DepositWithdraw } from "@/components/DepositWithdraw";
@@ -36,9 +37,9 @@ export default function Home() {
     tickUpper,
   } = useVaultPage(vaultAddress);
 
-  function handleStrategySelect(key: StrategyKey) {
+  const handleStrategySelect = useCallback((key: StrategyKey) => {
     router.push(`?strategy=${key}`);
-  }
+  }, [router]);
 
   return (
     <div className="min-h-screen bg-white">
