@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useCallback } from "react";
 import { usePublicClient, useChainId } from "wagmi";
-import { VAULT_ADDRESS, VAULT_ABI } from "@/lib/contracts";
+import { VAULT_ABI } from "@/lib/contracts";
 
 export interface RebalanceEvent {
   blockNumber: bigint;
@@ -25,7 +25,7 @@ export interface VaultEventsData {
 const REBALANCED_ABI = VAULT_ABI.find((x) => x.name === "Rebalanced" && x.type === "event")!;
 const FEES_ABI = VAULT_ABI.find((x) => x.name === "FeesCollected" && x.type === "event")!;
 
-export function useVaultEvents(): VaultEventsData {
+export function useVaultEvents(vaultAddress: `0x${string}`): VaultEventsData {
   const client = usePublicClient();
   const chainId = useChainId();
 
@@ -44,13 +44,13 @@ export function useVaultEvents(): VaultEventsData {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const [rbLogs, feeLogs]: [any[], any[]] = await Promise.all([
         client.getLogs({
-          address: VAULT_ADDRESS,
+          address: vaultAddress,
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
           event: REBALANCED_ABI as any,
           fromBlock: "earliest",
         }),
         client.getLogs({
-          address: VAULT_ADDRESS,
+          address: vaultAddress,
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
           event: FEES_ABI as any,
           fromBlock: "earliest",
@@ -114,7 +114,7 @@ export function useVaultEvents(): VaultEventsData {
       console.error("useVaultEvents:", e);
       setData((prev) => ({ ...prev, isLoading: false }));
     }
-  }, [client, chainId]);
+  }, [client, chainId, vaultAddress]);
 
   useEffect(() => {
     fetchEvents();
