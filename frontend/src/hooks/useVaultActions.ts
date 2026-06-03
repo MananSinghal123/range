@@ -9,13 +9,14 @@ import {
   usePublicClient,
 } from "wagmi";
 import { parseUnits, maxUint256 } from "viem";
-import { VAULT_ADDRESS, VAULT_ABI, ERC20_ABI } from "@/lib/contracts";
+import { VAULT_ABI, ERC20_ABI } from "@/lib/contracts";
 
 export type Tab = "deposit" | "withdraw";
 export type DepositToken = "MUSD" | "BTC";
 export type TxState = "idle" | "approving" | "pending" | "success" | "error";
 
 interface Params {
+  vaultAddress: `0x${string}`;
   tab: Tab;
   depositToken: DepositToken;
   amount: string;
@@ -34,6 +35,7 @@ interface Params {
 }
 
 export function useVaultActions({
+  vaultAddress,
   tab,
   depositToken,
   amount,
@@ -98,7 +100,7 @@ export function useVaultActions({
   else if (depositToken === "MUSD") previewFn = "previewDeposit";
 
   const { data: previewResult } = useReadContract({
-    address: VAULT_ADDRESS,
+    address: vaultAddress,
     abi: VAULT_ABI,
     functionName: previewFn,
     args: amountBig ? [amountBig] : undefined,
@@ -139,7 +141,7 @@ export function useVaultActions({
           address: tokenAddress,
           abi: ERC20_ABI,
           functionName: "approve",
-          args: [VAULT_ADDRESS, maxUint256],
+          args: [vaultAddress, maxUint256],
         });
         await publicClient?.waitForTransactionReceipt({ hash: approveHash });
       }
@@ -151,14 +153,14 @@ export function useVaultActions({
           switch (depositToken) {
             case "MUSD":
               await publicClient?.simulateContract({
-                address: VAULT_ADDRESS,
+                address: vaultAddress,
                 abi: VAULT_ABI,
                 functionName: "deposit",
                 args: [amountBig, address],
                 account: address,
               });
               hash = await writeContractAsync({
-                address: VAULT_ADDRESS,
+                address: vaultAddress,
                 abi: VAULT_ABI,
                 functionName: "deposit",
                 args: [amountBig, address],
@@ -166,7 +168,7 @@ export function useVaultActions({
               break;
             default:
               hash = await writeContractAsync({
-                address: VAULT_ADDRESS,
+                address: vaultAddress,
                 abi: VAULT_ABI,
                 functionName: "depositToken1",
                 args: [amountBig, address],
@@ -175,7 +177,7 @@ export function useVaultActions({
           break;
         case "withdraw":
           hash = await writeContractAsync({
-            address: VAULT_ADDRESS,
+            address: vaultAddress,
             abi: VAULT_ABI,
             functionName: "redeem",
             args: [amountBig, address, address],
