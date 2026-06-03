@@ -1,31 +1,25 @@
 "use client";
 
 import { useReadContracts, useReadContract, useAccount } from "wagmi";
-import { VAULT_ADDRESS, VAULT_ABI, VAULT_LENS_ADDRESS, VAULT_LENS_ABI, ERC20_ABI } from "@/lib/contracts";
+import { VAULT_ABI, VAULT_LENS_ADDRESS, VAULT_LENS_ABI, ERC20_ABI } from "@/lib/contracts";
 
-export function useVaultState() {
+export function useVaultState(vaultAddress: `0x${string}`) {
   const results = useReadContracts({
     contracts: [
-      { address: VAULT_ADDRESS, abi: VAULT_ABI, functionName: "symbol" },
-      { address: VAULT_ADDRESS, abi: VAULT_ABI, functionName: "totalAssets" },
-      { address: VAULT_ADDRESS, abi: VAULT_ABI, functionName: "totalSupply" },
-      { address: VAULT_LENS_ADDRESS, abi: VAULT_LENS_ABI, functionName: "sharePrice", args: [VAULT_ADDRESS] },
-      { address: VAULT_ADDRESS, abi: VAULT_ABI, functionName: "paused" },
-      {
-        address: VAULT_ADDRESS,
-        abi: VAULT_ABI,
-        functionName: "performanceFeeBps",
-      },
-      { address: VAULT_ADDRESS, abi: VAULT_ABI, functionName: "tokenId" },
-      { address: VAULT_ADDRESS, abi: VAULT_ABI, functionName: "token0" },
-      { address: VAULT_ADDRESS, abi: VAULT_ABI, functionName: "token1" },
-      { address: VAULT_ADDRESS, abi: VAULT_ABI, functionName: "decimals0" },
-      { address: VAULT_ADDRESS, abi: VAULT_ABI, functionName: "decimals1" },
+      { address: vaultAddress, abi: VAULT_ABI, functionName: "symbol" },
+      { address: vaultAddress, abi: VAULT_ABI, functionName: "totalAssets" },
+      { address: vaultAddress, abi: VAULT_ABI, functionName: "totalSupply" },
+      { address: VAULT_LENS_ADDRESS, abi: VAULT_LENS_ABI, functionName: "sharePrice", args: [vaultAddress] },
+      { address: vaultAddress, abi: VAULT_ABI, functionName: "paused" },
+      { address: vaultAddress, abi: VAULT_ABI, functionName: "performanceFeeBps" },
+      { address: vaultAddress, abi: VAULT_ABI, functionName: "tokenId" },
+      { address: vaultAddress, abi: VAULT_ABI, functionName: "token0" },
+      { address: vaultAddress, abi: VAULT_ABI, functionName: "token1" },
+      { address: vaultAddress, abi: VAULT_ABI, functionName: "decimals0" },
+      { address: vaultAddress, abi: VAULT_ABI, functionName: "decimals1" },
     ],
     query: { refetchInterval: 10_000 },
   });
-
-  console.log("Vault state results:", results.data);
 
   const data = results.data;
   const tokenId = data?.[6]?.result as bigint | undefined;
@@ -48,12 +42,12 @@ export function useVaultState() {
   };
 }
 
-export function usePoolState(initialized: boolean) {
+export function usePoolState(vaultAddress: `0x${string}`, initialized: boolean) {
   const poolState = useReadContract({
     address: VAULT_LENS_ADDRESS,
     abi: VAULT_LENS_ABI,
     functionName: "getPoolState",
-    args: [VAULT_ADDRESS],
+    args: [vaultAddress],
     query: { enabled: initialized, refetchInterval: 5_000 },
   });
 
@@ -61,7 +55,7 @@ export function usePoolState(initialized: boolean) {
     address: VAULT_LENS_ADDRESS,
     abi: VAULT_LENS_ABI,
     functionName: "getPosition",
-    args: [VAULT_ADDRESS],
+    args: [vaultAddress],
     query: { enabled: initialized, refetchInterval: 10_000 },
   });
 
@@ -69,7 +63,7 @@ export function usePoolState(initialized: boolean) {
     address: VAULT_LENS_ADDRESS,
     abi: VAULT_LENS_ABI,
     functionName: "isOutOfRange",
-    args: [VAULT_ADDRESS],
+    args: [vaultAddress],
     query: { enabled: initialized, refetchInterval: 5_000 },
   });
 
@@ -91,12 +85,12 @@ export function usePoolState(initialized: boolean) {
   };
 }
 
-export function useVaultMetrics(initialized: boolean) {
+export function useVaultMetrics(vaultAddress: `0x${string}`, initialized: boolean) {
   const result = useReadContract({
     address: VAULT_LENS_ADDRESS,
     abi: VAULT_LENS_ABI,
     functionName: "getVaultMetrics",
-    args: [VAULT_ADDRESS],
+    args: [vaultAddress],
     query: { enabled: initialized, refetchInterval: 15_000 },
   });
 
@@ -121,16 +115,8 @@ export function useTokenInfo(
 ) {
   const results = useReadContracts({
     contracts: [
-      {
-        address: token0Address,
-        abi: ERC20_ABI,
-        functionName: "symbol",
-      },
-      {
-        address: token1Address,
-        abi: ERC20_ABI,
-        functionName: "symbol",
-      },
+      { address: token0Address, abi: ERC20_ABI, functionName: "symbol" },
+      { address: token1Address, abi: ERC20_ABI, functionName: "symbol" },
     ],
     query: { enabled: !!(token0Address && token1Address) },
   });
@@ -142,6 +128,7 @@ export function useTokenInfo(
 }
 
 export function useUserPosition(
+  vaultAddress: `0x${string}`,
   token0Address: `0x${string}` | undefined,
   token1Address: `0x${string}` | undefined,
   _decimals0: number | undefined,
@@ -151,42 +138,12 @@ export function useUserPosition(
 
   const results = useReadContracts({
     contracts: [
-      {
-        address: VAULT_ADDRESS,
-        abi: VAULT_ABI,
-        functionName: "balanceOf",
-        args: address ? [address] : undefined,
-      },
-      {
-        address: VAULT_ADDRESS,
-        abi: VAULT_ABI,
-        functionName: "maxRedeem",
-        args: address ? [address] : undefined,
-      },
-      {
-        address: token0Address,
-        abi: ERC20_ABI,
-        functionName: "balanceOf",
-        args: address ? [address] : undefined,
-      },
-      {
-        address: token1Address,
-        abi: ERC20_ABI,
-        functionName: "balanceOf",
-        args: address ? [address] : undefined,
-      },
-      {
-        address: token0Address,
-        abi: ERC20_ABI,
-        functionName: "allowance",
-        args: address ? [address, VAULT_ADDRESS] : undefined,
-      },
-      {
-        address: token1Address,
-        abi: ERC20_ABI,
-        functionName: "allowance",
-        args: address ? [address, VAULT_ADDRESS] : undefined,
-      },
+      { address: vaultAddress, abi: VAULT_ABI, functionName: "balanceOf", args: address ? [address] : undefined },
+      { address: vaultAddress, abi: VAULT_ABI, functionName: "maxRedeem", args: address ? [address] : undefined },
+      { address: token0Address, abi: ERC20_ABI, functionName: "balanceOf", args: address ? [address] : undefined },
+      { address: token1Address, abi: ERC20_ABI, functionName: "balanceOf", args: address ? [address] : undefined },
+      { address: token0Address, abi: ERC20_ABI, functionName: "allowance", args: address ? [address, vaultAddress] : undefined },
+      { address: token1Address, abi: ERC20_ABI, functionName: "allowance", args: address ? [address, vaultAddress] : undefined },
     ],
     query: {
       enabled: !!(address && token0Address && token1Address),
