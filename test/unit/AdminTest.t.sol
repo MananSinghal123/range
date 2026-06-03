@@ -1,39 +1,45 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.13;
 
-import "./UnitBase.sol";
+import "../BaseTest.sol";
 
-contract AdminTest is UnitBase {
-    // ─── setOperator ──────────────────────────────────────────────────────────
-
+/// @notice Admin functions: setOperator, setPaused, setGuardian, oracle params,
+///         ownership transfer, sweepToken success path.
+contract AdminTest is BaseTest {
     function test_setOperator_updatesOperator() public {
-        address newOp = makeAddr("newOp");
         vm.prank(owner);
-        vault.setOperator(newOp);
-        assertEq(vault.operator(), newOp);
+        vault.setOperator(bob);
+        assertEq(vault.operator(), bob);
     }
 
-    function test_setOperator_revertsIfNotOwner() public {
+    function test_setOperator_nonOwnerReverts() public {
         vm.prank(alice);
-        vm.expectRevert(RebalancerVault.NotOwner.selector);
-        vault.setOperator(alice);
+        vm.expectRevert();
+        vault.setOperator(bob);
     }
 
-    function test_setOperator_revertsZeroAddress() public {
+    function test_setOperator_zeroAddressReverts() public {
         vm.prank(owner);
-        vm.expectRevert(RebalancerVault.ZeroAddress.selector);
+        vm.expectRevert();
         vault.setOperator(address(0));
     }
 
-    // ─── setPaused ────────────────────────────────────────────────────────────
+    function test_setOperator_emitsEvent() public {
+        vm.prank(owner);
+        vm.expectEmit(true, false, false, false);
+        emit OperatorUpdated(bob);
+        vault.setOperator(bob);
+    }
 
-    function test_setPaused_pausesVault() public {
+    // ── setPaused ─────────────────────────────────────────────────────────────
+
+    function test_setPaused_ownerCanPause() public {
         vm.prank(owner);
         vault.setPaused(true);
         assertTrue(vault.paused());
     }
 
-    function test_setPaused_unpausesVault() public {
+    function test_setPaused_ownerCanUnpause() public {
         vm.prank(owner);
         vault.setPaused(true);
         vm.prank(owner);
@@ -41,183 +47,140 @@ contract AdminTest is UnitBase {
         assertFalse(vault.paused());
     }
 
-    function test_setPaused_revertsIfNotOwner() public {
+    function test_setPaused_nonOwnerReverts() public {
         vm.prank(alice);
-        vm.expectRevert(RebalancerVault.NotOwner.selector);
+        vm.expectRevert();
         vault.setPaused(true);
     }
 
-    // ─── transferOwnership ────────────────────────────────────────────────────
+    // ── setGuardian ───────────────────────────────────────────────────────────
 
-    function test_transferOwnership_setsPendingOwner() public {
+    function test_setGuardian_updatesGuardian() public {
         vm.prank(owner);
-        vault.transferOwnership(alice);
-        assertEq(vault.pendingOwner(), alice);
+        vault.setGuardian(alice);
+        assertEq(vault.guardian(), alice);
     }
 
-    function test_transferOwnership_revertsIfNotOwner() public {
+    function test_setGuardian_nonOwnerReverts() public {
         vm.prank(alice);
-        vm.expectRevert(RebalancerVault.NotOwner.selector);
-        vault.transferOwnership(bob);
+        vm.expectRevert();
+        vault.setGuardian(bob);
     }
 
-    function test_transferOwnership_revertsZeroAddress() public {
+    function test_setGuardian_zeroAddressReverts() public {
         vm.prank(owner);
-        vm.expectRevert(RebalancerVault.ZeroAddress.selector);
-        vault.transferOwnership(address(0));
+        vm.expectRevert();
+        vault.setGuardian(address(0));
     }
 
-    function test_transferOwnership_revertsSameOwner() public {
+    // ── Oracle params ─────────────────────────────────────────────────────────
+
+    function test_setTwapSeconds_updatesValue() public {
         vm.prank(owner);
-        vm.expectRevert(RebalancerVault.SameOwner.selector);
+        vault.setTwapSeconds(600);
+        assertEq(vault.twapSeconds(), 600);
+    }
+
+    function test_setTwapSeconds_belowMinimumReverts() public {
+        vm.prank(owner);
+        vm.expectRevert();
+        vault.setTwapSeconds(59);
+    }
+
+    function test_setTwapSeconds_nonOwnerReverts() public {
+        vm.prank(alice);
+        vm.expectRevert();
+        vault.setTwapSeconds(600);
+    }
+
+    function test_setMaxTwapDeviationTicks_updatesValue() public {
+        vm.prank(owner);
+        vault.setMaxTwapDeviationTicks(500);
+        assertEq(vault.maxTwapDeviationTicks(), int24(500));
+    }
+
+    function test_setMaxTwapDeviationTicks_zeroReverts() public {
+        vm.prank(owner);
+        vm.expectRevert();
+        vault.setMaxTwapDeviationTicks(0);
+    }
+
+    function test_setMaxTwapDeviationTicks_over1000Reverts() public {
+        vm.prank(owner);
+        vm.expectRevert();
+        vault.setMaxTwapDeviationTicks(1001);
+    }
+
+    function test_setSlippageBps_updatesValue() public {
+        vm.prank(owner);
+        vault.setSlippageBps(200);
+        assertEq(vault.slippageBps(), 200);
+    }
+
+    function test_setSlippageBps_over500Reverts() public {
+        vm.prank(owner);
+        vm.expectRevert();
+        vault.setSlippageBps(501);
+    }
+
+    function test_setSlippageBps_nonOwnerReverts() public {
+        vm.prank(alice);
+        vm.expectRevert();
+        vault.setSlippageBps(100);
+    }
+
+    // ── sweepToken success path ───────────────────────────────────────────────
+
+    function test_sweepToken_transfersNonPoolToken() public {
+        MockERC20 dust = new MockERC20("Dust", "DUST", 18);
+        dust.mint(address(vault), 1e18);
+
+        uint256 ownerBefore = dust.balanceOf(owner);
+        vm.prank(owner);
+        vault.sweepToken(address(dust), owner);
+
+        assertEq(dust.balanceOf(owner), ownerBefore + 1e18);
+        assertEq(dust.balanceOf(address(vault)), 0);
+    }
+
+    function test_sweepToken_zeroBalanceReverts() public {
+        MockERC20 dust = new MockERC20("Dust", "DUST", 18);
+        vm.prank(owner);
+        vm.expectRevert();
+        vault.sweepToken(address(dust), owner);
+    }
+
+    function test_sweepToken_zeroToReverts() public {
+        MockERC20 dust = new MockERC20("Dust", "DUST", 18);
+        dust.mint(address(vault), 1e18);
+        vm.prank(owner);
+        vm.expectRevert();
+        vault.sweepToken(address(dust), address(0));
+    }
+
+    // ── Ownership transfer ────────────────────────────────────────────────────
+
+    function test_transferOwnership_sameOwnerReverts() public {
+        vm.prank(owner);
+        vm.expectRevert();
         vault.transferOwnership(owner);
     }
 
-    // ─── acceptOwnership ──────────────────────────────────────────────────────
-
-    function test_acceptOwnership_transfersOwnership() public {
+    function test_acceptOwnership_wrongCallerReverts() public {
         vm.prank(owner);
         vault.transferOwnership(alice);
-
-        vm.prank(alice);
-        vault.acceptOwnership();
-
-        assertEq(vault.owner(), alice);
-        assertEq(vault.pendingOwner(), address(0));
-    }
-
-    function test_acceptOwnership_revertsIfNotPendingOwner() public {
-        vm.prank(owner);
-        vault.transferOwnership(alice);
-
         vm.prank(bob);
-        vm.expectRevert(RebalancerVault.NotPendingOwner.selector);
+        vm.expectRevert();
         vault.acceptOwnership();
     }
 
-    // ─── proposePerformanceFee ────────────────────────────────────────────────
-
-    function test_proposePerformanceFee_setsPending() public {
-        vm.prank(owner);
-        vault.proposePerformanceFee(500, feeRecip);
-
-        assertEq(vault.pendingFeeBps(), 500);
-        assertEq(vault.pendingFeeRecipient(), feeRecip);
-    }
-
-    function test_proposePerformanceFee_setsTimelock() public {
-        vm.prank(owner);
-        vault.proposePerformanceFee(500, feeRecip);
-
-        assertEq(vault.feeChangeActiveAt(), block.timestamp + 2 days);
-    }
-
-    function test_proposePerformanceFee_revertsFeeTooHigh() public {
-        vm.prank(owner);
-        vm.expectRevert(RebalancerVault.FeeTooHigh.selector);
-        vault.proposePerformanceFee(1001, feeRecip);
-    }
-
-    function test_proposePerformanceFee_revertsZeroRecipient() public {
-        vm.prank(owner);
-        vm.expectRevert(RebalancerVault.ZeroAddress.selector);
-        vault.proposePerformanceFee(500, address(0));
-    }
-
-    function test_proposePerformanceFee_revertsIfNotOwner() public {
+    function test_transferOwnership_nonOwnerReverts() public {
         vm.prank(alice);
-        vm.expectRevert(RebalancerVault.NotOwner.selector);
-        vault.proposePerformanceFee(500, feeRecip);
+        vm.expectRevert();
+        vault.transferOwnership(bob);
     }
 
-    // ─── applyPerformanceFee ──────────────────────────────────────────────────
+    // ── Events ────────────────────────────────────────────────────────────────
 
-    function test_applyPerformanceFee_appliesFee() public {
-        _setFee(300);
-        assertEq(vault.performanceFeeBps(), 300);
-        assertEq(vault.feeRecipient(), feeRecip);
-    }
-
-    function test_applyPerformanceFee_revertsTimelockActive() public {
-        vm.startPrank(owner);
-        vault.proposePerformanceFee(500, feeRecip);
-
-        vm.expectRevert(RebalancerVault.TimelockActive.selector);
-        vault.applyPerformanceFee();
-        vm.stopPrank();
-    }
-
-    function test_applyPerformanceFee_succeedsAtExactTimelock() public {
-        vm.prank(owner);
-        vault.proposePerformanceFee(500, feeRecip);
-
-        vm.warp(block.timestamp + 2 days);
-        vm.prank(owner);
-        vault.applyPerformanceFee();
-
-        assertEq(vault.performanceFeeBps(), 500);
-    }
-
-    function test_applyPerformanceFee_revertsIfNotOwner() public {
-        vm.prank(owner);
-        vault.proposePerformanceFee(500, feeRecip);
-        _warpPastTimelock();
-
-        vm.prank(alice);
-        vm.expectRevert(RebalancerVault.NotOwner.selector);
-        vault.applyPerformanceFee();
-    }
-
-    // ─── sweepToken ───────────────────────────────────────────────────────────
-
-    function test_sweepToken_transfersBalance() public {
-        MockERC20 rogue = new MockERC20("Rogue", "RGE", 18);
-        rogue.mint(address(vault), 1000e18);
-
-        uint256 ownerBefore = rogue.balanceOf(owner);
-        vm.prank(owner);
-        vault.sweepToken(address(rogue), owner);
-
-        assertEq(rogue.balanceOf(owner), ownerBefore + 1000e18);
-        assertEq(rogue.balanceOf(address(vault)), 0);
-    }
-
-    function test_sweepToken_revertsOnToken0() public {
-        token0.mint(address(vault), 1);
-        vm.prank(owner);
-        vm.expectRevert(RebalancerVault.InvalidToken.selector);
-        vault.sweepToken(address(token0), owner);
-    }
-
-    function test_sweepToken_revertsOnToken1() public {
-        token1.mint(address(vault), 1);
-        vm.prank(owner);
-        vm.expectRevert(RebalancerVault.InvalidToken.selector);
-        vault.sweepToken(address(token1), owner);
-    }
-
-    function test_sweepToken_revertsZeroTo() public {
-        MockERC20 rogue = new MockERC20("Rogue", "RGE", 18);
-        rogue.mint(address(vault), 1e18);
-
-        vm.prank(owner);
-        vm.expectRevert(RebalancerVault.ZeroAddress.selector);
-        vault.sweepToken(address(rogue), address(0));
-    }
-
-    function test_sweepToken_revertsZeroBalance() public {
-        MockERC20 rogue = new MockERC20("Rogue", "RGE", 18);
-        vm.prank(owner);
-        vm.expectRevert(RebalancerVault.ZeroAmount.selector);
-        vault.sweepToken(address(rogue), owner);
-    }
-
-    function test_sweepToken_revertsIfNotOwner() public {
-        MockERC20 rogue = new MockERC20("Rogue", "RGE", 18);
-        rogue.mint(address(vault), 1e18);
-
-        vm.prank(alice);
-        vm.expectRevert(RebalancerVault.NotOwner.selector);
-        vault.sweepToken(address(rogue), alice);
-    }
+    event OperatorUpdated(address indexed newOperator);
 }

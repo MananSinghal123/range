@@ -22,18 +22,68 @@ export const VAULT_LENS_ABI = [
     stateMutability: "view",
     inputs: [{ name: "vault", type: "address" }],
     outputs: [
-      { name: "tvl", type: "uint256" },
-      { name: "tickLower", type: "int24" },
-      { name: "tickUpper", type: "int24" },
-      { name: "rebalanceCount", type: "uint256" },
-      { name: "fees0Earned", type: "uint256" },
-      { name: "fees1Earned", type: "uint256" },
+      {
+        name: "m",
+        type: "tuple",
+        components: [
+          { name: "tvl", type: "uint256" },
+          { name: "tickLower", type: "int24" },
+          { name: "tickUpper", type: "int24" },
+          { name: "rebalanceCount", type: "uint256" },
+          { name: "totalFees0Earned", type: "uint256" },
+          { name: "totalFees1Earned", type: "uint256" },
+        ],
+      },
     ],
+  },
+  {
+    name: "getPoolState",
+    type: "function",
+    stateMutability: "view",
+    inputs: [{ name: "vault", type: "address" }],
+    outputs: [
+      { name: "sqrtPriceX96", type: "uint160" },
+      { name: "tick", type: "int24" },
+    ],
+  },
+  {
+    name: "getPosition",
+    type: "function",
+    stateMutability: "view",
+    inputs: [{ name: "vault", type: "address" }],
+    outputs: [
+      {
+        name: "p",
+        type: "tuple",
+        components: [
+          { name: "token0", type: "address" },
+          { name: "token1", type: "address" },
+          { name: "tickSpacing", type: "int24" },
+          { name: "tickLower", type: "int24" },
+          { name: "tickUpper", type: "int24" },
+          { name: "liquidity", type: "uint128" },
+        ],
+      },
+    ],
+  },
+  {
+    name: "isOutOfRange",
+    type: "function",
+    stateMutability: "view",
+    inputs: [{ name: "vault", type: "address" }],
+    outputs: [{ name: "", type: "bool" }],
   },
 ] as const;
 
 export const VAULT_ABI = [
   // ── View Functions ─────────────────────────────────────────────────────────
+  {
+    name: "symbol",
+    type: "function",
+    stateMutability: "view",
+    inputs: [],
+    outputs: [{ name: "", type: "string" }],
+  },
   {
     name: "totalAssets",
     type: "function",
@@ -84,13 +134,6 @@ export const VAULT_ABI = [
     outputs: [{ name: "", type: "address" }],
   },
   {
-    name: "strategyType",
-    type: "function",
-    stateMutability: "view",
-    inputs: [],
-    outputs: [{ name: "", type: "uint8" }],
-  },
-  {
     name: "decimals0",
     type: "function",
     stateMutability: "view",
@@ -103,37 +146,6 @@ export const VAULT_ABI = [
     stateMutability: "view",
     inputs: [],
     outputs: [{ name: "", type: "uint8" }],
-  },
-  {
-    name: "getPoolState",
-    type: "function",
-    stateMutability: "view",
-    inputs: [],
-    outputs: [
-      { name: "sqrtPriceX96", type: "uint160" },
-      { name: "tick", type: "int24" },
-    ],
-  },
-  {
-    name: "getPosition",
-    type: "function",
-    stateMutability: "view",
-    inputs: [],
-    outputs: [
-      { name: "_token0", type: "address" },
-      { name: "_token1", type: "address" },
-      { name: "_tickSpacing", type: "int24" },
-      { name: "_tickLower", type: "int24" },
-      { name: "_tickUpper", type: "int24" },
-      { name: "_liquidity", type: "uint128" },
-    ],
-  },
-  {
-    name: "isOutOfRange",
-    type: "function",
-    stateMutability: "view",
-    inputs: [],
-    outputs: [{ name: "", type: "bool" }],
   },
   {
     name: "balanceOf",

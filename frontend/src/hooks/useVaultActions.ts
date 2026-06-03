@@ -27,6 +27,7 @@ interface Params {
   token1Address: `0x${string}` | undefined;
   symbol0: string;
   symbol1: string;
+  vaultSymbol: string;
   initialized: boolean;
   paused: boolean | undefined;
   isConnected: boolean;
@@ -44,6 +45,7 @@ export function useVaultActions({
   token1Address,
   symbol0,
   symbol1,
+  vaultSymbol,
   initialized,
   paused,
   isConnected,
@@ -86,7 +88,7 @@ export function useVaultActions({
   else inputSymbol = symbol1;
 
   // Deposit preview → shares received. Withdraw preview → token0 received.
-  const previewSuffix = tab === "deposit" ? "shares" : symbol0;
+  const previewSuffix = tab === "deposit" ? vaultSymbol : symbol0;
 
   // ── Preview (live read, no gas) ────────────────────────────────────────────
 

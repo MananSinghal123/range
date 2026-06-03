@@ -3,7 +3,7 @@ pragma solidity ^0.8.13;
 
 import "forge-std/Test.sol";
 import {CLDexAdapter} from "../../src/adapters/CLDexAdapter.sol";
-import {IDexAdapter} from "../../src/interfaces/IDexAdapter.sol";
+import {IDexAdapter} from "../../src/adapters/interfaces/IDexAdapter.sol";
 import {MockCLPool} from "../mocks/MockCLPool.sol";
 
 contract CLDexAdapterTest is Test {
@@ -37,7 +37,4 @@ contract CLDexAdapterTest is Test {
         assertEq(cum.length, 2);
     }
 
-    function test_adapterHasCode() public view {
-        assertTrue(address(adapter).code.length > 0);
-    }
 }

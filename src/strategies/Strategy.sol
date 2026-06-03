@@ -1,14 +1,10 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.13;
 
-import {IStrategy} from "../interfaces/IStrategy.sol";
+import {IStrategy} from "./interfaces/IStrategy.sol";
 import {VaultMath} from "../libraries/VaultMath.sol";
 
-/// @title FixedWidthStrategy
-/// @notice Symmetric fixed-half-width range strategy (TIGHT=300 / MEDIUM=700 / WIDE=1200).
-///         A plain non-proxy contract, so the half-width is a constructor immutable. One
-///         instance per risk profile; preserves the monolith's exact width constants.
-contract FixedWidthStrategy is IStrategy {
+contract Strategy is IStrategy {
     int24 public immutable halfWidth;
 
     error NonPositiveWidth();
@@ -19,16 +15,21 @@ contract FixedWidthStrategy is IStrategy {
     }
 
     /// @inheritdoc IStrategy
-    function computeRange(int24 twapTick, int24 tickSpacing)
-        external view returns (int24 tickLower, int24 tickUpper)
-    {
+    function computeRange(
+        int24 twapTick,
+        int24 tickSpacing
+    ) external view returns (int24 tickLower, int24 tickUpper) {
         tickLower = VaultMath.floor(twapTick - halfWidth, tickSpacing);
         tickUpper = VaultMath.ceil(twapTick + halfWidth, tickSpacing);
     }
 
     /// @inheritdoc IStrategy
     function computeOptimalSwap(
-        uint160 sqrtP, uint160 sqrtA, uint160 sqrtB, uint256 bal0, uint256 bal1
+        uint160 sqrtP,
+        uint160 sqrtA,
+        uint160 sqrtB,
+        uint256 bal0,
+        uint256 bal1
     ) external pure returns (bool zeroForOne, uint256 amount) {
         return VaultMath.computeOptimalSwap(sqrtP, sqrtA, sqrtB, bal0, bal1);
     }

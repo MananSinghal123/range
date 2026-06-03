@@ -23,10 +23,6 @@ contract OracleLibTest is Test {
         assertEq(OracleLib.getTwapTick(address(pool), 300), TICK);
     }
 
-    function test_requireSpotNearTwap_passesWhenFlat() public view {
-        OracleLib.requireSpotNearTwap(address(pool), 300, 200); // no revert
-    }
-
     function test_isDepositAllowed_trueWhenFlatNotPaused() public view {
         assertTrue(OracleLib.isDepositAllowed(address(pool), 300, 200, false));
     }

@@ -45,6 +45,7 @@ export function useVaultPage() {
     isConnected,
     sym0,
     sym1,
+    vaultSymbol: vault.vaultSymbol,
     d0,
     d1,
     vault,

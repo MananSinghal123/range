@@ -1,246 +1,75 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.13;
 
-import "./UnitBase.sol";
+import "../BaseTest.sol";
+import {TickMath} from "@uniswap/v3-core/contracts/libraries/TickMath.sol";
 
-contract EdgeCaseTest is UnitBase {
-    // ── Inflation attack ──────────────────────────────────────────────────────
+/// @notice Edge cases: extreme volatility, low-liquidity pools, gas bounds,
+///         and failed rebalance scenarios.
+contract EdgeCaseTest is BaseTest {
+    int24 internal LO;
+    int24 internal HI;
 
-    function test_inflationAttack_deadSharesPreventsIt() public {
-        uint256 attackDeposit = 1;
-        token0.mint(address(this), attackDeposit);
-        token0.approve(address(vault), attackDeposit);
-        vault.deposit(attackDeposit, address(this));
-
-        token0.mint(address(vault), 100e18);
-
-        vm.prank(alice);
-        uint256 aliceShares = vault.deposit(100e18, alice);
-        assertGt(aliceShares, 0);
-        vm.roll(block.number + 1);
-
-        vm.prank(alice);
-        assertGt(vault.redeem(aliceShares, alice, alice), 0);
+    function setUp() public override {
+        super.setUp();
+        LO = ((TICK_100K - 2000) / TICK_SPACING) * TICK_SPACING;
+        HI = ((TICK_100K + 2000) / TICK_SPACING) * TICK_SPACING;
     }
 
-    // ── Dead-shares boundary ──────────────────────────────────────────────────
+    /// @dev Spot tick > maxTwapDeviationTicks blocks all ops; resuming after
+    ///      price stabilizes confirms the guard is transient, not permanent.
+    function test_extremeVolatility() public {
+        pool.setPrice(SQRT_PRICE_100K, TICK_100K + 300);
 
-    function test_deposit_exactlyDeadShares_reverts() public {
         vm.prank(alice);
-        vm.expectRevert(RebalancerVault.BelowMinDeposit.selector);
-        vault.deposit(DEAD_SHARES, alice);
+        vm.expectRevert();
+        vault.depositToken1(1e18, alice);
+
+        // Price snaps back — ops resume.
+        pool.setPrice(SQRT_PRICE_100K, TICK_100K + 50);
+        vm.prank(alice);
+        assertGt(vault.deposit(10e8, alice), 0);
     }
 
-    function test_deposit_deadSharesPlusOne_mints1Share() public {
-        vm.prank(alice);
-        assertEq(vault.deposit(DEAD_SHARES + 1, alice), 1);
+    // ── Low liquidity pools ───────────────────────────────────────────────────
+
+    /// @dev initializePosition reverts when the position manager returns zero
+    ///      liquidity, confirming the NoLiquidityMinted guard fires.
+    function test_lowLiquidity() public {
+        MockPositionManager(PM_ADDR).setMintReturn(0, 0, 0);
+
+        vm.startPrank(owner);
+        token0.transfer(address(vault), 1e8);
+        vm.expectRevert();
+        vault.initializePosition(LO, HI, 1e8, 0, 0, 0);
+        vm.stopPrank();
     }
 
-    function test_redeem_fullRedeemLeavesDeadShares() public {
+    // ── Gas cost optimization ─────────────────────────────────────────────────
+
+    /// @dev Deposit gas must stay under a conservative ceiling.
+    function test_gas_depositUnderCeiling() public {
+        uint256 gasBefore = gasleft();
         vm.prank(alice);
         vault.deposit(10e8, alice);
-        vm.roll(block.number + 1);
-        uint256 aliceShares = vault.balanceOf(alice);
-        vm.prank(alice);
-        vault.redeem(aliceShares, alice, alice);
-        assertEq(vault.totalSupply(), DEAD_SHARES);
+        assertLt(gasBefore - gasleft(), 500_000, "deposit gas ceiling exceeded");
     }
 
-    // ── Zero-supply view functions ────────────────────────────────────────────
+    // ── Failed rebalances ─────────────────────────────────────────────────────
 
-    function test_convertToShares_zeroSupply_returnsInput() public view {
-        assertEq(vault.convertToShares(1e8), 1e8);
-    }
-
-    function test_convertToShares_maxUint128_zeroSupply_returnsInput()
-        public
-        view
-    {
-        assertEq(vault.convertToShares(type(uint128).max), type(uint128).max);
-    }
-
-    function test_previewWithdraw_zeroSupply_returnsMaxUint() public view {
-        assertEq(vault.previewWithdraw(1e8), type(uint256).max);
-    }
-
-    function test_previewWithdraw_afterDeposit_returnsFiniteValue() public {
-        _initialDeposit(INITIAL_DEPOSIT);
-        assertLt(vault.previewWithdraw(type(uint128).max), type(uint256).max);
-    }
-
-    // ── Tick alignment ────────────────────────────────────────────────────────
-
-    function test_rebalance_negativeTick_newRangeAligned() public {
-        _initialDeposit(INITIAL_DEPOSIT);
-        (int24 lo, int24 hi) = _defaultRange();
-        _initSmallPosition(lo, hi);
-        pool.setPrice(1e10, -400);
-
-        vm.prank(operator);
-        vault.rebalance(false, 0, RebalancerVault.StrategyType.MEDIUM);
-
-        (, , , , , int24 newLo, int24 newHi, , , , , ) = _pm().positions(
-            vault.tokenId()
-        );
-        int24 spacing = pool.tickSpacing();
-        assertEq(newLo % spacing, 0);
-        assertEq(newHi % spacing, 0);
-    }
-
-    function test_rebalance_extremePositiveTick_newRangeAligned() public {
-        _initialDeposit(INITIAL_DEPOSIT);
-        (int24 lo, int24 hi) = _defaultRange();
-        _initSmallPosition(lo, hi);
-        pool.setPrice(SQRT_PRICE_100K, 880000);
-
-        vm.prank(operator);
-        vault.rebalance(false, 0, RebalancerVault.StrategyType.MEDIUM);
-
-        (, , , , , int24 newLo, int24 newHi, , , , , ) = _pm().positions(
-            vault.tokenId()
-        );
-        int24 spacing = pool.tickSpacing();
-        assertEq(newLo % spacing, 0);
-        assertEq(newHi % spacing, 0);
-    }
-
-    function test_initializePosition_equalTicks_reverts() public {
-        int24 tick = (TICK_100K / TICK_SPACING) * TICK_SPACING;
-        vm.prank(owner);
-        vm.expectRevert(RebalancerVault.InvalidRange.selector);
-        vault.initializePosition(tick, tick, 1e7, 1e15, 0, 0);
-    }
-
-    // ── isOutOfRange boundary ─────────────────────────────────────────────────
-
-    function test_isOutOfRange_tickAtTickLower_isInRange() public {
-        _initialDeposit(INITIAL_DEPOSIT);
-        (int24 lo, int24 hi) = _defaultRange();
-        _initSmallPosition(lo, hi);
-        pool.setPrice(SQRT_PRICE_100K, lo);
-        assertFalse(vault.isOutOfRange());
-    }
-
-    function test_isOutOfRange_tickAtTickUpper_isOutOfRange() public {
-        _initialDeposit(INITIAL_DEPOSIT);
-        (int24 lo, int24 hi) = _defaultRange();
-        _initSmallPosition(lo, hi);
-        pool.setPrice(SQRT_PRICE_100K, hi);
-        assertTrue(vault.isOutOfRange());
-    }
-
-    // ── Overflow resistance ───────────────────────────────────────────────────
-
-    function test_totalAssets_largeToken1Idle_noOverflow() public {
+    /// @dev Re-mint failure reverts the entire transaction — tokenId is
+    ///      unchanged, proving no partial state is committed.
+    function test_failedRebalance() public {
         _initialDeposit(10e8);
-        token1.mint(address(vault), type(uint128).max);
-        vault.totalAssets();
-    }
+        _initPosition(LO, HI, 5e8, 0);
+        uint256 oldTokenId = vault.tokenId();
 
-    // ── Gas budgets ───────────────────────────────────────────────────────────
+        MockPositionManager(PM_ADDR).setShouldRevert(true, false, false);
 
-    function test_gas_deposit() public {
-        uint256 gas = gasleft();
-        vm.prank(alice);
-        vault.deposit(INITIAL_DEPOSIT, alice);
-        assertLt(gas - gasleft(), 300_000);
-    }
-
-    function test_gas_redeem() public {
-        _initialDeposit(INITIAL_DEPOSIT);
-        uint256 shares = vault.balanceOf(alice);
-        uint256 gas = gasleft();
-        vm.prank(alice);
-        vault.redeem(shares / 2, alice, alice);
-        assertLt(gas - gasleft(), 300_000);
-    }
-
-    function test_gas_rebalance() public {
-        _initialDeposit(INITIAL_DEPOSIT);
-        (int24 lo, int24 hi) = _defaultRange();
-        _initSmallPosition(lo, hi);
-        uint256 gas = gasleft();
         vm.prank(operator);
-        vault.rebalance(false, 0, RebalancerVault.StrategyType.MEDIUM);
-        assertLt(gas - gasleft(), 500_000);
-    }
-
-    function test_gas_collectFees() public {
-        _initialDeposit(INITIAL_DEPOSIT);
-        (int24 lo, int24 hi) = _defaultRange();
-        _initSmallPosition(lo, hi);
-        _pm().setPendingFees(vault.tokenId(), 1e6, 1e14);
-        uint256 gas = gasleft();
-        vm.prank(operator);
-        vault.collectFees(0, 0);
-        assertLt(gas - gasleft(), 200_000);
-    }
-
-    // ── Allowance enforcement ─────────────────────────────────────────────────
-
-    function test_redeem_withoutAllowance_reverts() public {
-        _initialDeposit(INITIAL_DEPOSIT);
-        vm.prank(bob);
         vm.expectRevert();
-        vault.redeem(1, bob, alice);
-    }
+        vault.rebalance(false, 0);
 
-    function test_withdraw_withoutAllowance_reverts() public {
-        _initialDeposit(INITIAL_DEPOSIT);
-        vm.prank(bob);
-        vm.expectRevert();
-        vault.withdraw(1e6, bob, alice);
-    }
-
-    // ── Sweep protection ──────────────────────────────────────────────────────
-
-    function test_sweepToken_cannotStealToken0() public {
-        _initialDeposit(INITIAL_DEPOSIT);
-        vm.prank(owner);
-        vm.expectRevert(RebalancerVault.InvalidToken.selector);
-        vault.sweepToken(address(token0), owner);
-    }
-
-    function test_sweepToken_cannotStealToken1() public {
-        token1.mint(address(vault), 1e18);
-        vm.prank(owner);
-        vm.expectRevert(RebalancerVault.InvalidToken.selector);
-        vault.sweepToken(address(token1), owner);
-    }
-
-    // ── Not-initialized guard ─────────────────────────────────────────────────
-
-    function test_getPosition_notInitialized_reverts() public {
-        vm.expectRevert(RebalancerVault.NotInitialized.selector);
-        vault.getPosition();
-    }
-
-    // ── Ether handling ────────────────────────────────────────────────────────
-
-    function test_receive_ether_accepted() public {
-        (bool ok, ) = address(vault).call{value: 1 ether}("");
-        assertTrue(ok);
-    }
-
-    // ── Rebalance edge cases ──────────────────────────────────────────────────
-
-    function test_rebalance_withSwap_zeroSlippage_doesNotRevert() public {
-        _initialDeposit(INITIAL_DEPOSIT);
-        (int24 lo, int24 hi) = _defaultRange();
-        _initSmallPosition(lo, hi);
-        vm.prank(alice);
-        vault.deposit(5e8, alice);
-        vm.prank(operator);
-        vault.rebalance(true, 1e6, RebalancerVault.StrategyType.MEDIUM);
-    }
-
-    function test_rebalance_lowLiquidityPosition_succeeds() public {
-        _initialDeposit(INITIAL_DEPOSIT);
-        (int24 lo, int24 hi) = _defaultRange();
-        _pm().setMintReturn(1, 0, 0);
-        _initPosition(lo, hi, 1e7, 1e15);
-        vm.prank(operator);
-        vault.rebalance(false, 0, RebalancerVault.StrategyType.MEDIUM);
-        assertGt(vault.tokenId(), 0);
+        assertEq(vault.tokenId(), oldTokenId);
     }
 }

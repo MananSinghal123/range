@@ -6,6 +6,7 @@ import { VAULT_ADDRESS, VAULT_ABI, VAULT_LENS_ADDRESS, VAULT_LENS_ABI, ERC20_ABI
 export function useVaultState() {
   const results = useReadContracts({
     contracts: [
+      { address: VAULT_ADDRESS, abi: VAULT_ABI, functionName: "symbol" },
       { address: VAULT_ADDRESS, abi: VAULT_ABI, functionName: "totalAssets" },
       { address: VAULT_ADDRESS, abi: VAULT_ABI, functionName: "totalSupply" },
       { address: VAULT_LENS_ADDRESS, abi: VAULT_LENS_ABI, functionName: "sharePrice", args: [VAULT_ADDRESS] },
@@ -18,7 +19,6 @@ export function useVaultState() {
       { address: VAULT_ADDRESS, abi: VAULT_ABI, functionName: "tokenId" },
       { address: VAULT_ADDRESS, abi: VAULT_ABI, functionName: "token0" },
       { address: VAULT_ADDRESS, abi: VAULT_ABI, functionName: "token1" },
-      { address: VAULT_ADDRESS, abi: VAULT_ABI, functionName: "strategyType" },
       { address: VAULT_ADDRESS, abi: VAULT_ABI, functionName: "decimals0" },
       { address: VAULT_ADDRESS, abi: VAULT_ABI, functionName: "decimals1" },
     ],
@@ -28,21 +28,21 @@ export function useVaultState() {
   console.log("Vault state results:", results.data);
 
   const data = results.data;
-  const tokenId = data?.[5]?.result as bigint | undefined;
+  const tokenId = data?.[6]?.result as bigint | undefined;
   const initialized = tokenId !== undefined && tokenId !== BigInt(0);
 
   return {
     isLoading: results.isLoading,
-    totalAssets: data?.[0]?.result as bigint | undefined,
-    totalSupply: data?.[1]?.result as bigint | undefined,
-    sharePrice: data?.[2]?.result as bigint | undefined,
-    paused: data?.[3]?.result as boolean | undefined,
-    performanceFeeBps: data?.[4]?.result as bigint | undefined,
+    vaultSymbol: (data?.[0]?.result as string | undefined) ?? "mREBAL",
+    totalAssets: data?.[1]?.result as bigint | undefined,
+    totalSupply: data?.[2]?.result as bigint | undefined,
+    sharePrice: data?.[3]?.result as bigint | undefined,
+    paused: data?.[4]?.result as boolean | undefined,
+    performanceFeeBps: data?.[5]?.result as bigint | undefined,
     tokenId,
     initialized,
-    token0Address: data?.[6]?.result as `0x${string}` | undefined,
-    token1Address: data?.[7]?.result as `0x${string}` | undefined,
-    strategyType: data?.[8]?.result as number | undefined,
+    token0Address: data?.[7]?.result as `0x${string}` | undefined,
+    token1Address: data?.[8]?.result as `0x${string}` | undefined,
     decimals0: data?.[9]?.result as number | undefined,
     decimals1: data?.[10]?.result as number | undefined,
   };
@@ -50,37 +50,42 @@ export function useVaultState() {
 
 export function usePoolState(initialized: boolean) {
   const poolState = useReadContract({
-    address: VAULT_ADDRESS,
-    abi: VAULT_ABI,
+    address: VAULT_LENS_ADDRESS,
+    abi: VAULT_LENS_ABI,
     functionName: "getPoolState",
+    args: [VAULT_ADDRESS],
     query: { enabled: initialized, refetchInterval: 5_000 },
   });
 
   const position = useReadContract({
-    address: VAULT_ADDRESS,
-    abi: VAULT_ABI,
+    address: VAULT_LENS_ADDRESS,
+    abi: VAULT_LENS_ABI,
     functionName: "getPosition",
+    args: [VAULT_ADDRESS],
     query: { enabled: initialized, refetchInterval: 10_000 },
   });
 
   const outOfRange = useReadContract({
-    address: VAULT_ADDRESS,
-    abi: VAULT_ABI,
+    address: VAULT_LENS_ADDRESS,
+    abi: VAULT_LENS_ABI,
     functionName: "isOutOfRange",
+    args: [VAULT_ADDRESS],
     query: { enabled: initialized, refetchInterval: 5_000 },
   });
 
-  const poolData = poolState.data as [bigint, number] | undefined;
+  const poolData = poolState.data as
+    | { sqrtPriceX96: bigint; tick: number }
+    | undefined;
   const posData = position.data as
-    | [string, string, number, number, number, bigint]
+    | { token0: string; token1: string; tickSpacing: number; tickLower: number; tickUpper: number; liquidity: bigint }
     | undefined;
 
   return {
-    sqrtPriceX96: poolData?.[0],
-    currentTick: poolData?.[1],
-    tickLower: posData?.[3],
-    tickUpper: posData?.[4],
-    liquidity: posData?.[5],
+    sqrtPriceX96: poolData?.sqrtPriceX96,
+    currentTick: poolData?.tick,
+    tickLower: posData?.tickLower,
+    tickUpper: posData?.tickUpper,
+    liquidity: posData?.liquidity,
     isOutOfRange: outOfRange.data as boolean | undefined,
     isLoading: poolState.isLoading || position.isLoading,
   };
@@ -96,16 +101,16 @@ export function useVaultMetrics(initialized: boolean) {
   });
 
   const data = result.data as
-    | [bigint, number, number, bigint, bigint, bigint]
+    | { tvl: bigint; tickLower: number; tickUpper: number; rebalanceCount: bigint; totalFees0Earned: bigint; totalFees1Earned: bigint }
     | undefined;
 
   return {
-    tvl: data?.[0],
-    tickLower: data?.[1],
-    tickUpper: data?.[2],
-    rebalanceCount: data?.[3],
-    fees0Earned: data?.[4],
-    fees1Earned: data?.[5],
+    tvl: data?.tvl,
+    tickLower: data?.tickLower,
+    tickUpper: data?.tickUpper,
+    rebalanceCount: data?.rebalanceCount,
+    fees0Earned: data?.totalFees0Earned,
+    fees1Earned: data?.totalFees1Earned,
     isLoading: result.isLoading,
   };
 }

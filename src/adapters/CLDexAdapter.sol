@@ -3,7 +3,7 @@ pragma solidity ^0.8.13;
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-import {IDexAdapter} from "../interfaces/IDexAdapter.sol";
+import {IDexAdapter} from "./interfaces/IDexAdapter.sol";
 import {ICLPool} from "../interfaces/pool/ICLPool.sol";
 import {
     INonfungiblePositionManager
@@ -13,7 +13,6 @@ import {ICLSwapRouter} from "../interfaces/router/ICLSwapRouter.sol";
 contract CLDexAdapter is IDexAdapter {
     using SafeERC20 for IERC20;
 
-    // ── reads ──
     function slot0(
         address pool
     ) external view returns (uint160 sqrtPriceX96, int24 tick) {
@@ -63,7 +62,6 @@ contract CLDexAdapter is IDexAdapter {
         ) = INonfungiblePositionManager(positionManager).positions(tokenId);
     }
 
-    // ── writes (delegatecall: address(this) == vault) ──
     function mint(
         MintArgs calldata p
     )

@@ -15,6 +15,7 @@ export default function Home() {
     isConnected,
     sym0,
     sym1,
+    vaultSymbol,
     d0,
     d1,
     vault,
@@ -74,6 +75,7 @@ export default function Home() {
               decimals1={d1}
               symbol0={sym0}
               symbol1={sym1}
+              vaultSymbol={vaultSymbol}
               balance0={user.balance0}
               balance1={user.balance1}
               allowance0={user.allowance0}

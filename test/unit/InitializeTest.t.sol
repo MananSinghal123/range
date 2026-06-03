@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.13;
 
-import "./UpgradeableBase.sol";
+import "../BaseTest.sol";
 
-contract InitializeTest is UpgradeableBase {
+contract InitializeTest is BaseTest {
     function test_initialState() public view {
         assertEq(vault.owner(), owner);
         assertEq(vault.operator(), operator);

@@ -17,10 +17,6 @@ library VaultStorageLib {
         // ── swappable modules + their timelocks ──
         address strategy;
         address dexAdapter;
-        address pendingStrategy;
-        uint256 strategyChangeActiveAt;
-        address pendingDexAdapter;
-        uint256 dexAdapterChangeActiveAt;
         // ── DEX wiring (was immutable / constant in the monolith) ──
         address pool;
         address token0;

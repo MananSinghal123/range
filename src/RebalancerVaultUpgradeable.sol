@@ -25,8 +25,8 @@ import {
     INonfungiblePositionManager
 } from "./interfaces/INonfungiblePositionManager.sol";
 import {ICLSwapRouter} from "./interfaces/router/ICLSwapRouter.sol";
-import {IDexAdapter} from "./interfaces/IDexAdapter.sol";
-import {IStrategy} from "./interfaces/IStrategy.sol";
+import {IDexAdapter} from "./adapters/interfaces/IDexAdapter.sol";
+import {IStrategy} from "./strategies/interfaces/IStrategy.sol";
 
 import {VaultStorageLib} from "./libraries/VaultStorageLib.sol";
 import {OracleLib} from "./libraries/OracleLib.sol";
@@ -44,7 +44,6 @@ import {
 ///           OracleLib  → TWAP math (single slot0 + observe read per call)
 ///           VaultMath  → slippage / optimal-swap / tick math (pure)
 ///           IStrategy  → range selection (staticcall; vault re-validates output)
-///           IDexAdapter→ DEX I/O (reads = staticcall; writes = delegatecall in vault ctx)
 /// @dev    STORAGE: all custom state lives in the ERC-7201 namespace returned by _s().
 ///         Every function that touches state MUST go through _s() — never bare identifiers.
 ///         UPGRADEABILITY: implementation constructor calls _disableInitializers(); one
@@ -97,9 +96,7 @@ contract RebalancerVaultUpgradeable is
         address indexed previousOwner,
         address indexed newOwner
     );
-    event StrategyProposed(address indexed strategy, uint256 activeAt);
     event StrategyUpdated(address indexed strategy);
-    event DexAdapterProposed(address indexed dexAdapter, uint256 activeAt);
     event DexAdapterUpdated(address indexed dexAdapter);
     event GuardianUpdated(address indexed guardian);
 
@@ -251,18 +248,6 @@ contract RebalancerVaultUpgradeable is
     function dexAdapter() public view returns (address) {
         return _s().dexAdapter;
     }
-    function pendingStrategy() public view returns (address) {
-        return _s().pendingStrategy;
-    }
-    function strategyChangeActiveAt() public view returns (uint256) {
-        return _s().strategyChangeActiveAt;
-    }
-    function pendingDexAdapter() public view returns (address) {
-        return _s().pendingDexAdapter;
-    }
-    function dexAdapterChangeActiveAt() public view returns (uint256) {
-        return _s().dexAdapterChangeActiveAt;
-    }
     function pool() public view returns (ICLPool) {
         return ICLPool(_s().pool);
     }
@@ -324,8 +309,6 @@ contract RebalancerVaultUpgradeable is
     function slippageBps() public view returns (uint256) {
         return _s().slippageBps;
     }
-
-    // ─── ERC4626 overrides ───────────────────────────────────────────────────────
 
     function decimals()
         public
@@ -439,7 +422,7 @@ contract RebalancerVaultUpgradeable is
         _requireSpotNearTwap();
 
         VaultStorageLib.VaultStorage storage s = _s();
-        s.lastDepositBlock[receiver] = block.number;
+        s.lastDepositBlock[msg.sender] = block.number;
 
         uint256 totalValBefore = _totalVaultValueInToken0();
         uint256 supply = totalSupply();
@@ -476,7 +459,7 @@ contract RebalancerVaultUpgradeable is
         _requireSpotNearTwap();
 
         VaultStorageLib.VaultStorage storage s = _s();
-        s.lastDepositBlock[receiver] = block.number;
+        s.lastDepositBlock[msg.sender] = block.number;
 
         uint256 supply = totalSupply();
         uint256 ta = totalAssets();
@@ -739,9 +722,15 @@ contract RebalancerVaultUpgradeable is
             })
         );
 
-        (, , uint128 tokensOwed0, uint128 tokensOwed1, , , ) = _adapterPositions(
-            currentTokenId
-        );
+        (
+            ,
+            ,
+            ,
+            uint128 tokensOwed0,
+            uint128 tokensOwed1,
+            ,
+
+        ) = _adapterPositions(currentTokenId);
 
         _collect(
             IDexAdapter.CollectArgs({
@@ -817,47 +806,66 @@ contract RebalancerVaultUpgradeable is
             ,
             ,
             ,
-        ) = _adapterPositions(oldTokenId);
 
-        // Snapshot owed BEFORE decrease.
-        (, , uint128 owedBefore0, uint128 owedBefore1, , , ) = _adapterPositions(oldTokenId);
+        ) = _adapterPositions(oldTokenId);
 
         uint256 principal0;
         uint256 principal1;
         if (liquidity > 0) {
             (uint256 rm0, uint256 rm1) = VaultMath.computeMintSlippage(
                 OracleLib.getTwapSqrtPrice(s.pool, s.twapSeconds),
-                tickLower, tickUpper, 0, 0, liquidity, s.slippageBps
+                tickLower,
+                tickUpper,
+                0,
+                0,
+                liquidity,
+                s.slippageBps
             );
-            (principal0, principal1) = _decreaseLiquidity(IDexAdapter.DecreaseArgs({
-                positionManager: s.positionManager,
-                tokenId: oldTokenId,
-                liquidity: liquidity,
-                amount0Min: rm0,
-                amount1Min: rm1,
-                deadline: block.timestamp + 300
-            }));
+            (principal0, principal1) = _decreaseLiquidity(
+                IDexAdapter.DecreaseArgs({
+                    positionManager: s.positionManager,
+                    tokenId: oldTokenId,
+                    liquidity: liquidity,
+                    amount0Min: rm0,
+                    amount1Min: rm1,
+                    deadline: block.timestamp + 300
+                })
+            );
         }
 
-        // Re-read AFTER decrease: owed = owedBefore + newFees + principal.
-        (, , uint128 tokensOwed0, uint128 tokensOwed1, , , ) = _adapterPositions(oldTokenId);
+        // Re-read after decrease: tokensOwed = all accumulated fees + principal.
+        // Fee isolation: subtract only principal to get all fees (pre-existing + newly flushed).
+        (
+            ,
+            ,
+            ,
+            uint128 tokensOwed0,
+            uint128 tokensOwed1,
+            ,
 
-        // Fee isolation: (owedAfter − owedBefore) − principal = newly flushed fees.
-        uint128 feesOwed0 = tokensOwed0 - owedBefore0 - uint128(principal0);
-        uint128 feesOwed1 = tokensOwed1 - owedBefore1 - uint128(principal1);
+        ) = _adapterPositions(oldTokenId);
 
-        (uint256 fee0, uint256 fee1) = _deductPerformanceFee(uint256(feesOwed0), uint256(feesOwed1));
+        uint128 feesOwed0 = tokensOwed0 - uint128(principal0);
+        uint128 feesOwed1 = tokensOwed1 - uint128(principal1);
+
+        (uint256 fee0, uint256 fee1) = _deductPerformanceFee(
+            uint256(feesOwed0),
+            uint256(feesOwed1)
+        );
         s.totalFees0Earned += fee0;
         s.totalFees1Earned += fee1;
-        if (fee0 > 0 || fee1 > 0) emit FeesCollected(fee0, fee1, s.feeRecipient);
+        if (fee0 > 0 || fee1 > 0)
+            emit FeesCollected(fee0, fee1, s.feeRecipient);
 
-        _collect(IDexAdapter.CollectArgs({
-            positionManager: s.positionManager,
-            tokenId: oldTokenId,
-            recipient: address(this),
-            amount0Max: tokensOwed0,
-            amount1Max: tokensOwed1
-        }));
+        _collect(
+            IDexAdapter.CollectArgs({
+                positionManager: s.positionManager,
+                tokenId: oldTokenId,
+                recipient: address(this),
+                amount0Max: tokensOwed0,
+                amount1Max: tokensOwed1
+            })
+        );
 
         _burnPosition(oldTokenId);
     }
@@ -867,8 +875,8 @@ contract RebalancerVaultUpgradeable is
         VaultStorageLib.VaultStorage storage s,
         uint256 oldTokenId
     ) private {
-        int24 twapTick   = OracleLib.getTwapTick(s.pool, s.twapSeconds);
-        int24 tickSpacing= _adapterTickSpacing();
+        int24 twapTick = OracleLib.getTwapTick(s.pool, s.twapSeconds);
+        int24 tickSpacing = _adapterTickSpacing();
         (int24 newLo, int24 newHi) = _strategyRange(twapTick, tickSpacing);
 
         uint256 bal0 = IERC20(s.token0).balanceOf(address(this));
@@ -877,23 +885,30 @@ contract RebalancerVaultUpgradeable is
 
         (uint256 min0, uint256 min1) = VaultMath.computeMintSlippage(
             OracleLib.getTwapSqrtPrice(s.pool, s.twapSeconds),
-            newLo, newHi, bal0, bal1, 0, s.slippageBps
+            newLo,
+            newHi,
+            bal0,
+            bal1,
+            0,
+            s.slippageBps
         );
 
-        (uint256 newTokenId, uint128 newLiquidity, , ) = _mintPosition(IDexAdapter.MintArgs({
-            positionManager: s.positionManager,
-            token0:          s.token0,
-            token1:          s.token1,
-            tickSpacing:     tickSpacing,
-            tickLower:       newLo,
-            tickUpper:       newHi,
-            amount0Desired:  bal0,
-            amount1Desired:  bal1,
-            amount0Min:      min0,
-            amount1Min:      min1,
-            recipient:       address(this),
-            deadline:        block.timestamp + 300
-        }));
+        (uint256 newTokenId, uint128 newLiquidity, , ) = _mintPosition(
+            IDexAdapter.MintArgs({
+                positionManager: s.positionManager,
+                token0: s.token0,
+                token1: s.token1,
+                tickSpacing: tickSpacing,
+                tickLower: newLo,
+                tickUpper: newHi,
+                amount0Desired: bal0,
+                amount1Desired: bal1,
+                amount0Min: min0,
+                amount1Min: min1,
+                recipient: address(this),
+                deadline: block.timestamp + 300
+            })
+        );
 
         if (newLiquidity == 0) revert NoLiquidityMinted();
 
@@ -944,6 +959,18 @@ contract RebalancerVaultUpgradeable is
         emit GuardianUpdated(newGuardian);
     }
 
+    function setStrategy(address newStrategy) external onlyOwner {
+        if (newStrategy == address(0)) revert ZeroAddress();
+        _s().strategy = newStrategy;
+        emit StrategyUpdated(newStrategy);
+    }
+
+    function setDexAdapter(address newAdapter) external onlyOwner {
+        if (newAdapter == address(0)) revert ZeroAddress();
+        _s().dexAdapter = newAdapter;
+        emit DexAdapterUpdated(newAdapter);
+    }
+
     function proposePerformanceFee(
         uint256 bps,
         address recipient
@@ -963,40 +990,6 @@ contract RebalancerVaultUpgradeable is
         s.performanceFeeBps = s.pendingFeeBps;
         s.feeRecipient = s.pendingFeeRecipient;
         emit PerformanceFeeUpdated(s.pendingFeeBps, s.pendingFeeRecipient);
-    }
-
-    /// @notice Begin a 2-day timelock to replace the strategy module.
-    function proposeStrategy(address newStrategy) external onlyOwner {
-        if (newStrategy == address(0)) revert ZeroAddress();
-        VaultStorageLib.VaultStorage storage s = _s();
-        s.pendingStrategy = newStrategy;
-        s.strategyChangeActiveAt = block.timestamp + 2 days;
-        emit StrategyProposed(newStrategy, s.strategyChangeActiveAt);
-    }
-
-    function applyStrategy() external onlyOwner {
-        VaultStorageLib.VaultStorage storage s = _s();
-        if (block.timestamp < s.strategyChangeActiveAt) revert TimelockActive();
-        s.strategy = s.pendingStrategy;
-        emit StrategyUpdated(s.pendingStrategy);
-    }
-
-    /// @notice Begin a 2-day timelock to replace the DEX adapter.
-    /// @dev    The adapter runs via delegatecall — only adopt audited, stateless adapters.
-    function proposeDexAdapter(address newAdapter) external onlyOwner {
-        if (newAdapter == address(0)) revert ZeroAddress();
-        VaultStorageLib.VaultStorage storage s = _s();
-        s.pendingDexAdapter = newAdapter;
-        s.dexAdapterChangeActiveAt = block.timestamp + 2 days;
-        emit DexAdapterProposed(newAdapter, s.dexAdapterChangeActiveAt);
-    }
-
-    function applyDexAdapter() external onlyOwner {
-        VaultStorageLib.VaultStorage storage s = _s();
-        if (block.timestamp < s.dexAdapterChangeActiveAt)
-            revert TimelockActive();
-        s.dexAdapter = s.pendingDexAdapter;
-        emit DexAdapterUpdated(s.pendingDexAdapter);
     }
 
     function sweepToken(address token, address to) external onlyOwner {
@@ -1022,122 +1015,6 @@ contract RebalancerVaultUpgradeable is
     function setSlippageBps(uint256 bps) external onlyOwner {
         require(bps <= 500, "Vault: slippage too high");
         _s().slippageBps = bps;
-    }
-
-    // ─── View helpers (absorbed from VaultLens) ──────────────────────────────────
-
-    /// @notice Price of one share expressed in token0 units (scaled to token0 decimals).
-    function sharePrice() external view returns (uint256) {
-        uint256 supply = totalSupply();
-        if (supply == 0) return 0;
-        return
-            Math.mulDiv(
-                totalAssets(),
-                10 ** decimals(),
-                supply,
-                Math.Rounding.Floor
-            );
-    }
-
-    /// @notice All key vault metrics in a single call.
-    function getVaultMetrics()
-        external
-        view
-        returns (
-            uint256 tvl,
-            int24 tickLower,
-            int24 tickUpper,
-            uint256 rebalCount,
-            uint256 fees0Earned,
-            uint256 fees1Earned
-        )
-    {
-        VaultStorageLib.VaultStorage storage s = _s();
-        tvl = totalAssets();
-        rebalCount = s.rebalanceCount;
-        fees0Earned = s.totalFees0Earned;
-        fees1Earned = s.totalFees1Earned;
-        if (s.tokenId != 0) {
-            (tickLower, tickUpper, , , , , ) = _adapterPositions(s.tokenId);
-        }
-    }
-
-    /// @notice Current pool price and tick from slot0.
-    /// @dev WARNING: spot price — manipulable within a block. Do not use for pricing.
-    function getPoolState()
-        external
-        view
-        returns (uint160 sqrtPriceX96, int24 tick)
-    {
-        return _adapterSlot0();
-    }
-
-    function getPosition()
-        external
-        view
-        positionExists
-        returns (
-            address _token0,
-            address _token1,
-            int24 _tickSpacing,
-            int24 _tickLower,
-            int24 _tickUpper,
-            uint128 _liquidity
-        )
-    {
-        VaultStorageLib.VaultStorage storage s = _s();
-        (
-            _tickLower,
-            _tickUpper,
-            _liquidity,
-            ,
-            ,
-            _token0,
-            _token1
-        ) = _adapterPositions(s.tokenId);
-        _tickSpacing = _adapterTickSpacing();
-    }
-
-    function isOutOfRange() external view positionExists returns (bool) {
-        (, int24 tick) = _adapterSlot0();
-        (int24 lo, int24 hi, , , , , ) = _adapterPositions(_s().tokenId);
-        return tick < lo || tick >= hi;
-    }
-
-    /// @notice Off-chain helper: optimal swap direction + amount before the next rebalance.
-    function computeRebalanceParams()
-        external
-        view
-        positionExists
-        returns (bool swapZeroForOne, uint256 swapAmount)
-    {
-        VaultStorageLib.VaultStorage storage s = _s();
-        (int24 lo, int24 hi, uint128 liq, , , , ) = _adapterPositions(s.tokenId);
-        (uint160 sqrtPriceX96, ) = _adapterSlot0();
-
-        (uint256 amount0, uint256 amount1) = LiquidityAmounts
-            .getAmountsForLiquidity(
-                sqrtPriceX96,
-                TickMath.getSqrtRatioAtTick(lo),
-                TickMath.getSqrtRatioAtTick(hi),
-                liq
-            );
-
-        int24 twapTick = OracleLib.getTwapTick(s.pool, s.twapSeconds);
-        int24 spacing = _adapterTickSpacing();
-        (int24 rLo, int24 rHi) = IStrategy(s.strategy).computeRange(
-            twapTick,
-            spacing
-        );
-
-        return
-            IStrategy(s.strategy).computeOptimalSwap(
-                sqrtPriceX96,
-                TickMath.getSqrtRatioAtTick(rLo),
-                TickMath.getSqrtRatioAtTick(rHi),
-                amount0,
-                amount1
-            );
     }
 
     // ─── ERC-721 receive / ETH ────────────────────────────────────────────────────
@@ -1194,6 +1071,7 @@ contract RebalancerVaultUpgradeable is
                 uint128 owed0,
                 uint128 owed1,
                 ,
+
             ) = _adapterPositions(s.tokenId);
             (uint256 pos0, uint256 pos1) = LiquidityAmounts
                 .getAmountsForLiquidity(
@@ -1224,7 +1102,9 @@ contract RebalancerVaultUpgradeable is
     ) private view returns (uint256 min0, uint256 min1) {
         VaultStorageLib.VaultStorage storage s = _s();
         if (s.tokenId == 0) return (0, 0);
-        (int24 lo, int24 hi, uint128 liq, , , , ) = _adapterPositions(s.tokenId);
+        (int24 lo, int24 hi, uint128 liq, , , , ) = _adapterPositions(
+            s.tokenId
+        );
         uint128 toRemove = uint128(
             Math.mulDiv(uint256(liq), shares, supply, Math.Rounding.Ceil)
         );

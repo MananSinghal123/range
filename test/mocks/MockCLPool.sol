@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.13;
 
-import "../../src/interfaces/ICLPool.sol";
+import "../../src/interfaces/pool/ICLPool.sol";
 
 /// @dev Mock CLPool that mirrors the real CLPool's initialize() pattern.
 ///      No constructor — state is set via initialize() just like the real clone.

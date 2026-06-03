@@ -15,6 +15,7 @@ interface Props {
   decimals1?: number;
   symbol0?: string;
   symbol1?: string;
+  vaultSymbol?: string;
   balance0?: bigint;
   balance1?: bigint;
   allowance0?: bigint;
@@ -32,6 +33,7 @@ export function DepositWithdraw({
   decimals1 = 8,
   symbol0 = "MUSD",
   symbol1 = "BTC",
+  vaultSymbol = "mREBAL",
   balance0,
   balance1,
   allowance0,
@@ -48,7 +50,7 @@ export function DepositWithdraw({
     decimals0, decimals1,
     allowance0, allowance1,
     token0Address, token1Address,
-    symbol0, symbol1,
+    symbol0, symbol1, vaultSymbol,
     initialized, paused, isConnected,
   });
 
