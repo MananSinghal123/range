@@ -11,13 +11,19 @@ import { RebalanceHistory } from "@/components/RebalanceHistory";
 import { Footer } from "@/components/ui/footer";
 import { StrategySelector } from "@/components/StrategySelector";
 import { useVaultPage } from "@/hooks/useVaultPage";
-import { STRATEGIES, resolveStrategy, type StrategyKey } from "@/lib/strategies";
+import {
+  STRATEGIES,
+  resolveStrategy,
+  type StrategyKey,
+} from "@/lib/strategies";
 
 export default function Home() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const strategyKey = resolveStrategy(searchParams.get("strategy"));
   const vaultAddress = STRATEGIES[strategyKey].vaultAddress;
+
+  console.log(vaultAddress);
 
   const {
     isConnected,
@@ -37,9 +43,29 @@ export default function Home() {
     tickUpper,
   } = useVaultPage(vaultAddress);
 
-  const handleStrategySelect = useCallback((key: StrategyKey) => {
-    router.push(`?strategy=${key}`);
-  }, [router]);
+  console.log("Vault data:", {
+    isConnected,
+    sym0,
+    sym1,
+    vaultSymbol,
+    d0,
+    d1,
+    vault,
+    pool,
+    user,
+    events,
+    apy,
+    rebalanceCount,
+    totalFee0,
+    tickLower,
+    tickUpper,
+  });
+  const handleStrategySelect = useCallback(
+    (key: StrategyKey) => {
+      router.push(`?strategy=${key}`);
+    },
+    [router],
+  );
 
   return (
     <div className="min-h-screen bg-white">
@@ -59,7 +85,10 @@ export default function Home() {
         </div>
 
         {/* Strategy selector */}
-        <StrategySelector selected={strategyKey} onSelect={handleStrategySelect} />
+        <StrategySelector
+          selected={strategyKey}
+          onSelect={handleStrategySelect}
+        />
 
         {/* Stats — full width */}
         <VaultStats

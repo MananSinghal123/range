@@ -128,6 +128,10 @@ contract RebalancerVaultUpgradeable is
     error PriceDeviatedFromTwap();
     error NothingToMint();
     error SameBlock();
+    error Paused();
+    error TwapTooShort();
+    error DeviationOutOfRange();
+    error SlippageTooHigh();
 
     // ─── Init params ────────────────────────────────────────────────────────────
 
@@ -160,7 +164,7 @@ contract RebalancerVaultUpgradeable is
     }
 
     modifier whenNotPaused() {
-        require(!_s().paused, "Vault: paused");
+        if (_s().paused) revert Paused();
         _;
     }
 
@@ -169,27 +173,12 @@ contract RebalancerVaultUpgradeable is
         _;
     }
 
-    // ─── Constructor + initializer ───────────────────────────────────────────────
-
-    /// @dev Prevents the implementation contract itself from being initialized.
     constructor() {
         _disableInitializers();
     }
 
     /// @notice One-time initializer replacing the monolith constructor.
     function initialize(InitParams calldata p) external initializer {
-        if (
-            p.owner == address(0) ||
-            p.operator == address(0) ||
-            p.guardian == address(0) ||
-            p.pool == address(0) ||
-            p.positionManager == address(0) ||
-            p.swapRouter == address(0) ||
-            p.strategy == address(0) ||
-            p.dexAdapter == address(0) ||
-            p.feeRecipient == address(0)
-        ) revert ZeroAddress();
-
         __ERC20_init(p.name, p.symbol);
         __ERC4626_init(IERC20(ICLPool(p.pool).token0()));
         // ReentrancyGuardTransient uses transient storage; no __init required.
@@ -206,12 +195,10 @@ contract RebalancerVaultUpgradeable is
         s.dexAdapter = p.dexAdapter;
         s.feeRecipient = p.feeRecipient;
 
-        address t0 = ICLPool(p.pool).token0();
-        address t1 = ICLPool(p.pool).token1();
-        s.token0 = t0;
-        s.token1 = t1;
-        s.decimals0 = _safeDecimals(t0);
-        s.decimals1 = _safeDecimals(t1);
+        s.token0 = ICLPool(p.pool).token0();
+        s.token1 = ICLPool(p.pool).token1();
+        s.decimals0 = _safeDecimals(s.token0);
+        s.decimals1 = _safeDecimals(s.token1);
 
         s.performanceFeeBps = 1000;
         s.twapSeconds = 300;
@@ -219,13 +206,9 @@ contract RebalancerVaultUpgradeable is
         s.slippageBps = 50;
     }
 
-    // ─── Storage accessor ────────────────────────────────────────────────────────
-
     function _s() internal pure returns (VaultStorageLib.VaultStorage storage) {
         return VaultStorageLib.get();
     }
-
-    // ─── Public getters ─────────────────────────────────────────────────────────
 
     function owner() public view returns (address) {
         return _s().owner;
@@ -371,7 +354,7 @@ contract RebalancerVaultUpgradeable is
     }
 
     function previewMint(
-        uint256 shares
+        uint256 shares 
     ) public view override returns (uint256) {
         uint256 supply = totalSupply();
         if (supply == 0) return shares + DEAD_SHARES;
@@ -409,9 +392,6 @@ contract RebalancerVaultUpgradeable is
         return convertToAssets(shares);
     }
 
-    // ─── ERC4626 mutating overrides ──────────────────────────────────────────────
-
-    /// @inheritdoc ERC4626Upgradeable
     function deposit(
         uint256 assets,
         address receiver
@@ -586,9 +566,6 @@ contract RebalancerVaultUpgradeable is
         emit Withdraw(msg.sender, receiver, owner_, assets, shares);
     }
 
-    // ─── Token1 deposit ─────────────────────────────────────────────────────────
-
-    /// @notice Preview shares for a token1 deposit (uses TWAP price).
     function previewDepositToken1(
         uint256 token1Amount
     ) public view returns (uint256) {
@@ -656,9 +633,7 @@ contract RebalancerVaultUpgradeable is
         emit Token1Deposited(msg.sender, receiver, token1Amount, shares);
     }
 
-    // ─── Position lifecycle ──────────────────────────────────────────────────────
 
-    /// @notice Deposit the vault's idle balances into a new CL position.
     function initializePosition(
         int24 tickLower,
         int24 tickUpper,
@@ -671,7 +646,6 @@ contract RebalancerVaultUpgradeable is
         if (s.tokenId != 0) revert AlreadyInitialized();
         if (tickLower >= tickUpper) revert InvalidRange();
 
-        // Adapter mint performs forceApprove(token0/1, positionManager) in vault context.
         (uint256 newTokenId, uint128 newLiquidity, , ) = _mintPosition(
             IDexAdapter.MintArgs({
                 positionManager: s.positionManager,
@@ -695,7 +669,6 @@ contract RebalancerVaultUpgradeable is
         emit Rebalanced(0, newTokenId, tickLower, tickUpper, newLiquidity);
     }
 
-    /// @notice Collect accrued LP fees, deduct performance fee, and leave net in the vault.
     function collectFees(
         uint256 amount0Min,
         uint256 amount1Min
@@ -710,7 +683,6 @@ contract RebalancerVaultUpgradeable is
         VaultStorageLib.VaultStorage storage s = _s();
         uint256 currentTokenId = s.tokenId;
 
-        // Zero-liquidity decrease to flush feeGrowthInside into tokensOwed.
         _decreaseLiquidity(
             IDexAdapter.DecreaseArgs({
                 positionManager: s.positionManager,
@@ -755,12 +727,6 @@ contract RebalancerVaultUpgradeable is
             emit FeesCollected(fee0, fee1, s.feeRecipient);
     }
 
-    /// @notice Remove all liquidity, collect fees, optionally swap for ratio, then re-mint
-    ///         at a new TWAP-anchored range computed by the bound strategy module.
-    /// @dev    The new range is anchored on the TWAP tick — not spot — to prevent a
-    ///         flash-loan from forcing the vault into an attacker-chosen position.
-    ///         All slippage floors (remove, swap, mint) are computed on-chain; the keeper
-    ///         cannot pass zero min-amounts.
     function rebalance(
         bool swapZeroForOne,
         uint256 swapAmount
@@ -770,11 +736,8 @@ contract RebalancerVaultUpgradeable is
         VaultStorageLib.VaultStorage storage s = _s();
         uint256 oldTokenId = s.tokenId;
 
-        // Steps 1–4: remove liquidity, isolate + deduct fees, collect, burn.
-        // Extracted to avoid stack-too-deep with the mint locals below.
         _rebalanceRemoveFeeCollectBurn(oldTokenId, s);
 
-        // Step 5: optional ratio-alignment swap — TWAP-enforced slippage floor.
         if (swapAmount > 0) {
             _executeSwap(
                 swapZeroForOne,
@@ -788,13 +751,9 @@ contract RebalancerVaultUpgradeable is
             );
         }
 
-        // Steps 6–7: compute new TWAP-anchored range and mint.
         _rebalanceMintNew(s, oldTokenId);
     }
 
-    /// @dev Steps 1–4 of rebalance, extracted to reduce stack depth.
-    ///      Snapshot owed before decrease, decrease, re-read owed, isolate fees,
-    ///      deduct performance fee, collect, burn.
     function _rebalanceRemoveFeeCollectBurn(
         uint256 oldTokenId,
         VaultStorageLib.VaultStorage storage s
@@ -833,8 +792,6 @@ contract RebalancerVaultUpgradeable is
             );
         }
 
-        // Re-read after decrease: tokensOwed = all accumulated fees + principal.
-        // Fee isolation: subtract only principal to get all fees (pre-existing + newly flushed).
         (
             ,
             ,
@@ -870,7 +827,6 @@ contract RebalancerVaultUpgradeable is
         _burnPosition(oldTokenId);
     }
 
-    /// @dev Steps 6–7 of rebalance: compute TWAP-anchored range, mint new position, commit.
     function _rebalanceMintNew(
         VaultStorageLib.VaultStorage storage s,
         uint256 oldTokenId
@@ -1003,17 +959,17 @@ contract RebalancerVaultUpgradeable is
     }
 
     function setTwapSeconds(uint32 seconds_) external onlyOwner {
-        require(seconds_ >= 60, "Vault: twap too short");
+        if (seconds_ < 60) revert TwapTooShort();
         _s().twapSeconds = seconds_;
     }
 
     function setMaxTwapDeviationTicks(int24 ticks) external onlyOwner {
-        require(ticks > 0 && ticks <= 1000, "Vault: deviation out of range");
+        if (ticks <= 0 || ticks > 1000) revert DeviationOutOfRange();
         _s().maxTwapDeviationTicks = ticks;
     }
 
     function setSlippageBps(uint256 bps) external onlyOwner {
-        require(bps <= 500, "Vault: slippage too high");
+        if (bps > 500) revert SlippageTooHigh();
         _s().slippageBps = bps;
     }
 

@@ -4,7 +4,11 @@ import { useState } from "react";
 import { formatUnits } from "viem";
 import { Loader2 } from "lucide-react";
 import { formatTokenAmount } from "@/lib/utils";
-import { useVaultActions, type Tab, type DepositToken } from "@/hooks/useVaultActions";
+import {
+  useVaultActions,
+  type Tab,
+  type DepositToken,
+} from "@/hooks/useVaultActions";
 
 interface Props {
   vaultAddress: `0x${string}`;
@@ -49,17 +53,24 @@ export function DepositWithdraw({
 
   const actions = useVaultActions({
     vaultAddress,
-    tab, depositToken, amount,
-    decimals0, decimals1,
-    allowance0, allowance1,
-    token0Address, token1Address,
-    symbol0, symbol1, vaultSymbol,
-    initialized, paused, isConnected,
+    tab,
+    depositToken,
+    amount,
+    decimals0,
+    decimals1,
+    allowance0,
+    allowance1,
+    token0Address,
+    token1Address,
+    symbol0,
+    symbol1,
+    vaultSymbol,
+    initialized,
+    paused,
+    isConnected,
   });
 
-  const balance =
-    tab === "withdraw" ? maxRedeem :
-    depositToken === "MUSD" ? balance0 : balance1;
+  const balance = depositToken === "MUSD" ? balance0 : balance1;
 
   function tabStyle(t: Tab) {
     const active = tab === t;
@@ -80,47 +91,91 @@ export function DepositWithdraw({
     };
   }
 
-  return (
-    <div className="rounded-xl" style={{ border: "1px solid var(--border)", background: "#fff" }}>
+  console.log(balance);
 
+  return (
+    <div
+      className="rounded-xl"
+      style={{ border: "1px solid var(--border)", background: "#fff" }}
+    >
       {/* Tab switcher */}
       <div className="flex" style={{ borderBottom: "1px solid var(--border)" }}>
-        <button type="button" onClick={() => { setTab("deposit"); setAmount(""); }}
-          className="flex-1 py-3 text-sm font-medium capitalize cursor-pointer" style={tabStyle("deposit")}>
+        <button
+          type="button"
+          onClick={() => {
+            setTab("deposit");
+            setAmount("");
+          }}
+          className="flex-1 py-3 text-sm font-medium capitalize cursor-pointer"
+          style={tabStyle("deposit")}
+        >
           Deposit
         </button>
-        <button type="button" onClick={() => { setTab("withdraw"); setAmount(""); }}
-          className="flex-1 py-3 text-sm font-medium capitalize cursor-pointer" style={tabStyle("withdraw")}>
+        <button
+          type="button"
+          onClick={() => {
+            setTab("withdraw");
+            setAmount("");
+          }}
+          className="flex-1 py-3 text-sm font-medium capitalize cursor-pointer"
+          style={tabStyle("withdraw")}
+        >
           Withdraw
         </button>
       </div>
 
       <div className="p-5 space-y-4">
-
         {/* Token selector (deposit only) */}
         {tab === "deposit" && (
           <div className="flex gap-2">
-            <button type="button" onClick={() => { setDepositToken("MUSD"); setAmount(""); }}
-              className="px-3 py-1.5 rounded-md text-sm font-medium cursor-pointer" style={tokenBtnStyle("MUSD")}>
+            <button
+              type="button"
+              onClick={() => {
+                setDepositToken("MUSD");
+                setAmount("");
+              }}
+              className="px-3 py-1.5 rounded-md text-sm font-medium cursor-pointer"
+              style={tokenBtnStyle("MUSD")}
+            >
               {symbol0}
             </button>
-            <button type="button" onClick={() => { setDepositToken("BTC"); setAmount(""); }}
-              className="px-3 py-1.5 rounded-md text-sm font-medium cursor-pointer" style={tokenBtnStyle("BTC")}>
+            <button
+              type="button"
+              onClick={() => {
+                setDepositToken("BTC");
+                setAmount("");
+              }}
+              className="px-3 py-1.5 rounded-md text-sm font-medium cursor-pointer"
+              style={tokenBtnStyle("BTC")}
+            >
               {symbol1}
             </button>
           </div>
         )}
 
         {/* Amount input */}
-        <div className="rounded-lg p-3.5"
-          style={{ background: "var(--surface)", border: "1px solid var(--border)" }}
-          onFocus={(e) => (e.currentTarget.style.borderColor = "var(--border-focus)")}
-          onBlur={(e) => (e.currentTarget.style.borderColor = "var(--border)")}>
+        <div
+          className="rounded-lg p-3.5"
+          style={{
+            background: "var(--surface)",
+            border: "1px solid var(--border)",
+          }}
+          onFocus={(e) =>
+            (e.currentTarget.style.borderColor = "var(--border-focus)")
+          }
+          onBlur={(e) => (e.currentTarget.style.borderColor = "var(--border)")}
+        >
           <div className="flex items-center justify-between mb-2">
             <span className="label">Amount</span>
             {balance !== undefined && (
-              <button type="button" onClick={() => setAmount(formatUnits(balance, actions.inputDecimals))}
-                className="label cursor-pointer" style={{ color: "var(--red)" }}>
+              <button
+                type="button"
+                onClick={() =>
+                  setAmount(formatUnits(balance, actions.inputDecimals))
+                }
+                className="label cursor-pointer"
+                style={{ color: "var(--red)" }}
+              >
                 Max {formatTokenAmount(balance, actions.inputDecimals, 6)}
               </button>
             )}
@@ -135,7 +190,10 @@ export function DepositWithdraw({
               className="flex-1 bg-transparent font-mono text-3xl font-medium outline-none disabled:opacity-40"
               style={{ color: "var(--text)", minWidth: 0 }}
             />
-            <span className="text-sm font-medium flex-shrink-0" style={{ color: "var(--text-2)" }}>
+            <span
+              className="text-sm font-medium flex-shrink-0"
+              style={{ color: "var(--text-2)" }}
+            >
               {actions.inputSymbol}
             </span>
           </div>
@@ -146,46 +204,69 @@ export function DepositWithdraw({
           <div className="flex items-center justify-between">
             <span className="label">You receive</span>
             <span className="mono text-sm" style={{ color: "var(--text)" }}>
-              {formatTokenAmount(actions.previewResult, decimals0, 8)} {actions.previewSuffix}
+              {formatTokenAmount(actions.previewResult, decimals0, 8)}{" "}
+              {actions.previewSuffix}
             </span>
           </div>
         )}
 
         {/* Vault blocking message (paused / not initialized) */}
         {actions.blockingMessage && (
-          <p className="text-sm" style={{ color: "var(--text-2)" }}>{actions.blockingMessage}</p>
+          <p className="text-sm" style={{ color: "var(--text-2)" }}>
+            {actions.blockingMessage}
+          </p>
         )}
 
         {/* Transaction status */}
         {actions.txState === "success" && (
-          <p className="text-sm font-medium" style={{ color: "var(--green)" }}>✓ Transaction confirmed</p>
+          <p className="text-sm font-medium" style={{ color: "var(--green)" }}>
+            ✓ Transaction confirmed
+          </p>
         )}
         {actions.txState === "error" && (
-          <p className="text-sm" style={{ color: "#DC2626" }}>Transaction failed — please try again</p>
+          <p className="text-sm" style={{ color: "#DC2626" }}>
+            Transaction failed — please try again
+          </p>
         )}
 
         {/* Action button */}
         {!isConnected && (
-          <p className="text-sm text-center" style={{ color: "var(--text-3)" }}>Connect your wallet to continue</p>
+          <p className="text-sm text-center" style={{ color: "var(--text-3)" }}>
+            Connect your wallet to continue
+          </p>
         )}
 
         {isConnected && (
-          <button type="button" onClick={actions.handleAction} disabled={actions.isDisabled}
-            className="btn-red w-full py-3 rounded-lg text-sm font-semibold flex items-center justify-center gap-2 cursor-pointer">
-            {actions.txState === "approving"
-              ? <><Loader2 className="w-4 h-4 animate-spin" /> Approving…</>
-              : actions.txState === "pending" || actions.isProcessing
-              ? <><Loader2 className="w-4 h-4 animate-spin" /> Confirming…</>
-              : tab === "deposit" ? `Deposit ${actions.inputSymbol}` : "Withdraw"}
+          <button
+            type="button"
+            onClick={actions.handleAction}
+            disabled={actions.isDisabled}
+            className="btn-red w-full py-3 rounded-lg text-sm font-semibold flex items-center justify-center gap-2 cursor-pointer"
+          >
+            {actions.txState === "approving" ? (
+              <>
+                <Loader2 className="w-4 h-4 animate-spin" /> Approving…
+              </>
+            ) : actions.txState === "pending" || actions.isProcessing ? (
+              <>
+                <Loader2 className="w-4 h-4 animate-spin" /> Confirming…
+              </>
+            ) : tab === "deposit" ? (
+              `Deposit ${actions.inputSymbol}`
+            ) : (
+              "Withdraw"
+            )}
           </button>
         )}
 
         {tab === "withdraw" && isConnected && (
-          <p className="text-center" style={{ fontSize: "12px", color: "var(--text-3)" }}>
+          <p
+            className="text-center"
+            style={{ fontSize: "12px", color: "var(--text-3)" }}
+          >
             You receive both {symbol0} and {symbol1} proportionally
           </p>
         )}
-
       </div>
     </div>
   );

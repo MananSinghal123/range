@@ -2,17 +2,18 @@ export const STRATEGIES = {
   tight: {
     label: "Tight",
     description: "Narrow range, higher fees, more rebalances",
-    vaultAddress: "0x0000000000000000000000000000000000000001" as `0x${string}`,
+    vaultAddress: process.env.NEXT_PUBLIC_VAULT_MUSD_BTC_TIGHT as `0x${string}`,
   },
   medium: {
     label: "Medium",
     description: "Balanced range and rebalance frequency",
-    vaultAddress: "0x0000000000000000000000000000000000000002" as `0x${string}`,
+    vaultAddress: process.env
+      .NEXT_PUBLIC_VAULT_MUSD_BTC_MEDIUM as `0x${string}`,
   },
   wide: {
     label: "Wide",
     description: "Wide range, lower fees, fewer rebalances",
-    vaultAddress: "0x0000000000000000000000000000000000000003" as `0x${string}`,
+    vaultAddress: process.env.NEXT_PUBLIC_VAULT_MUSD_BTC_WIDE as `0x${string}`,
   },
 } as const;
 

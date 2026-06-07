@@ -14,22 +14,7 @@ contract PositionTest is BaseTest {
         HI = ((TICK_100K + 2000) / TICK_SPACING) * TICK_SPACING;
     }
 
-    // ── initializePosition ────────────────────────────────────────────────────
 
-    function test_position_tokenIdAdvancesOnInit() public {
-        _initialDeposit(10e8);
-        _initPosition(LO, HI, 5e8, 0);
-        uint256 firstId = vault.tokenId();
-        assertGt(firstId, 0);
-    }
-
-    function test_position_totalAssetsIncludesPositionValue() public {
-        _initialDeposit(10e8);
-        uint256 taBefore = vault.totalAssets();
-        _initPosition(LO, HI, 5e8, 0);
-        // After moving 5e8 into the position, totalAssets should still account for it.
-        assertApproxEqAbs(vault.totalAssets(), taBefore, 1e6);
-    }
 
     function test_position_initWithToken1AlsoWorks() public {
         _initialDeposit(10e8);

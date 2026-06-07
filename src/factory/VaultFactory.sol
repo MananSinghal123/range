@@ -1,14 +1,19 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.13;
 
-import {UpgradeableBeacon} from "@openzeppelin/contracts/proxy/beacon/UpgradeableBeacon.sol";
-import {BeaconProxy} from "@openzeppelin/contracts/proxy/beacon/BeaconProxy.sol";
+import {
+    UpgradeableBeacon
+} from "@openzeppelin/contracts/proxy/beacon/UpgradeableBeacon.sol";
+import {
+    BeaconProxy
+} from "@openzeppelin/contracts/proxy/beacon/BeaconProxy.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import {
+    SafeERC20
+} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
 import {RebalancerVaultUpgradeable} from "../RebalancerVaultUpgradeable.sol";
 import {IRebalancerVault} from "../interfaces/IRebalancerVault.sol";
-
 
 contract VaultFactory is UpgradeableBeacon {
     using SafeERC20 for IERC20;
@@ -17,14 +22,8 @@ contract VaultFactory is UpgradeableBeacon {
     address public immutable swapRouter;
     address public immutable dexAdapter;
 
-    // ─── Admin ──────────────────────────────────────────────────────────────────
-    /// @notice Address allowed to trigger {pauseAll} across all registered vaults.
     address public guardian;
-
-    // ─── Registry ───────────────────────────────────────────────────────────────
-    /// @notice vault address keyed by (pool, strategy).
     mapping(address => mapping(address => address)) public vaultFor;
-    /// @notice Flat list of every deployed vault, in deployment order.
     address[] public allVaults;
 
     event VaultDeployed(
@@ -52,12 +51,6 @@ contract VaultFactory is UpgradeableBeacon {
         _;
     }
 
-    /// @param implementation   Initial vault implementation contract.
-    /// @param _positionManager CL position manager address.
-    /// @param _swapRouter      CL swap router address.
-    /// @param _dexAdapter      Stateless DEX adapter used by every vault.
-    /// @param _guardian        Address allowed to call {pauseAll}.
-    /// @param _owner           Factory + beacon owner (may deploy vaults and upgrade).
     constructor(
         address implementation,
         address _positionManager,
@@ -88,9 +81,17 @@ contract VaultFactory is UpgradeableBeacon {
         string memory name,
         string memory symbol
     ) external onlyOwner returns (address vault) {
-        return _deploy(pool, strategy, vaultOwner, operator, feeRecipient, name, symbol);
+        return
+            _deploy(
+                pool,
+                strategy,
+                vaultOwner,
+                operator,
+                feeRecipient,
+                name,
+                symbol
+            );
     }
-
 
     function deploySeedAndInitialize(
         address pool,
@@ -108,9 +109,19 @@ contract VaultFactory is UpgradeableBeacon {
     ) external onlyOwner returns (address vault) {
         if (vaultOwner == address(0)) revert ZeroAddress();
 
-        vault = _deploy(pool, strategy, address(this), operator, feeRecipient, name, symbol);
+        vault = _deploy(
+            pool,
+            strategy,
+            address(this),
+            operator,
+            feeRecipient,
+            name,
+            symbol
+        );
 
-        RebalancerVaultUpgradeable v = RebalancerVaultUpgradeable(payable(vault));
+        RebalancerVaultUpgradeable v = RebalancerVaultUpgradeable(
+            payable(vault)
+        );
         address token0 = address(v.token0());
         address token1 = address(v.token1());
 
@@ -132,9 +143,6 @@ contract VaultFactory is UpgradeableBeacon {
         emit VaultSeeded(vault, msg.sender, seedAssets, v.tokenId());
     }
 
-    // ─── Guardian ───────────────────────────────────────────────────────────────
-
-    /// @notice Pause every registered vault. Callable only by the configured guardian.
     function pauseAll() external onlyGuardian {
         uint256 n = allVaults.length;
         for (uint256 i; i < n; i++) {
@@ -143,23 +151,15 @@ contract VaultFactory is UpgradeableBeacon {
         emit PausedAll(n);
     }
 
-    // ─── Admin ──────────────────────────────────────────────────────────────────
-
-    /// @notice Update the address allowed to call {pauseAll}.
     function setGuardian(address newGuardian) external onlyOwner {
         if (newGuardian == address(0)) revert ZeroAddress();
         guardian = newGuardian;
         emit GuardianUpdated(newGuardian);
     }
 
-    // ─── Views ──────────────────────────────────────────────────────────────────
-
-    /// @notice Number of vaults the factory has deployed.
     function vaultCount() external view returns (uint256) {
         return allVaults.length;
     }
-
-    // ─── Internal ───────────────────────────────────────────────────────────────
 
     function _deploy(
         address pool,
@@ -170,12 +170,6 @@ contract VaultFactory is UpgradeableBeacon {
         string memory name,
         string memory symbol
     ) internal returns (address vault) {
-        if (
-            pool == address(0) ||
-            strategy == address(0) ||
-            operator == address(0) ||
-            feeRecipient == address(0)
-        ) revert ZeroAddress();
         if (vaultFor[pool][strategy] != address(0)) revert VaultExists();
 
         bytes memory initData = abi.encodeCall(
@@ -197,7 +191,6 @@ contract VaultFactory is UpgradeableBeacon {
             )
         );
 
-        // Proxies point at address(this) — this contract IS the beacon.
         vault = address(new BeaconProxy(address(this), initData));
 
         vaultFor[pool][strategy] = vault;

@@ -1,7 +1,5 @@
-export const VAULT_LENS_ADDRESS = (
-  process.env.NEXT_PUBLIC_VAULT_LENS_ADDRESS ||
-  "0x0000000000000000000000000000000000000000"
-) as `0x${string}`;
+export const VAULT_LENS_ADDRESS = (process.env.NEXT_PUBLIC_VAULT_LENS ||
+  "0x0000000000000000000000000000000000000000") as `0x${string}`;
 
 export const VAULT_LENS_ABI = [
   {
@@ -71,7 +69,6 @@ export const VAULT_LENS_ABI = [
 ] as const;
 
 export const VAULT_ABI = [
-  // ── View Functions ─────────────────────────────────────────────────────────
   {
     name: "symbol",
     type: "function",
