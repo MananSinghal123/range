@@ -75,6 +75,15 @@ contract CLDexAdapter is IDexAdapter {
     {
         IERC20(p.token0).forceApprove(p.positionManager, p.amount0Desired);
         IERC20(p.token1).forceApprove(p.positionManager, p.amount1Desired);
+
+        //  (bool success, bytes memory data) = p.token1.call(
+        //     abi.encodeWithSelector(
+        //         IERC20.approve.selector,
+        //         address(p.positionManager),
+        //         p.amount1Desired
+        //     )
+        // );
+
         return
             INonfungiblePositionManager(p.positionManager).mint(
                 INonfungiblePositionManager.MintParams({

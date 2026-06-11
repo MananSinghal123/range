@@ -37,17 +37,6 @@ import {
     LiquidityAmounts
 } from "@uniswap/v3-periphery/contracts/libraries/LiquidityAmounts.sol";
 
-/// @title RebalancerVaultUpgradeable
-/// @notice Beacon-proxy-upgradeable ERC4626 concentrated-liquidity vault denominated in
-///         token0. Structural refactor of the monolithic RebalancerVault.sol — identical
-///         external behavior, split across modules:
-///           OracleLib  → TWAP math (single slot0 + observe read per call)
-///           VaultMath  → slippage / optimal-swap / tick math (pure)
-///           IStrategy  → range selection (staticcall; vault re-validates output)
-/// @dev    STORAGE: all custom state lives in the ERC-7201 namespace returned by _s().
-///         Every function that touches state MUST go through _s() — never bare identifiers.
-///         UPGRADEABILITY: implementation constructor calls _disableInitializers(); one
-///         UpgradeableBeacon per deployment; one BeaconProxy per (pool, strategy) vault.
 contract RebalancerVaultUpgradeable is
     Initializable,
     ERC20Upgradeable,
@@ -133,7 +122,6 @@ contract RebalancerVaultUpgradeable is
     error DeviationOutOfRange();
     error SlippageTooHigh();
 
-    // ─── Init params ────────────────────────────────────────────────────────────
 
     /// @notice Parameters consumed once by {initialize}. Field order is ABI-stable
     ///         (factory encodes against this struct — do not reorder).
@@ -151,7 +139,6 @@ contract RebalancerVaultUpgradeable is
         string symbol;
     }
 
-    // ─── Modifiers ──────────────────────────────────────────────────────────────
 
     modifier onlyOwner() {
         if (msg.sender != _s().owner) revert NotOwner();
@@ -181,7 +168,6 @@ contract RebalancerVaultUpgradeable is
     function initialize(InitParams calldata p) external initializer {
         __ERC20_init(p.name, p.symbol);
         __ERC4626_init(IERC20(ICLPool(p.pool).token0()));
-        // ReentrancyGuardTransient uses transient storage; no __init required.
 
         VaultStorageLib.VaultStorage storage s = _s();
 
@@ -354,7 +340,7 @@ contract RebalancerVaultUpgradeable is
     }
 
     function previewMint(
-        uint256 shares 
+        uint256 shares
     ) public view override returns (uint256) {
         uint256 supply = totalSupply();
         if (supply == 0) return shares + DEAD_SHARES;
@@ -632,7 +618,6 @@ contract RebalancerVaultUpgradeable is
         _mint(receiver, shares);
         emit Token1Deposited(msg.sender, receiver, token1Amount, shares);
     }
-
 
     function initializePosition(
         int24 tickLower,
