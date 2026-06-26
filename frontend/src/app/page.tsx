@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter, useSearchParams } from "next/navigation";
-import { useCallback } from "react";
+import { Suspense, useCallback } from "react";
 import { Header } from "@/components/ui/header";
 import { VaultStats } from "@/components/VaultStats";
 import { DepositWithdraw } from "@/components/DepositWithdraw";
@@ -18,6 +18,14 @@ import {
 } from "@/lib/strategies";
 
 export default function Home() {
+  return (
+    <Suspense fallback={null}>
+      <VaultPageContent />
+    </Suspense>
+  );
+}
+
+function VaultPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const strategyKey = resolveStrategy(searchParams.get("strategy"));
