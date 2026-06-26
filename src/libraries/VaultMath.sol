@@ -49,34 +49,45 @@ library VaultMath {
         uint256 balance0,
         uint256 balance1
     ) internal pure returns (bool swapZeroForOne, uint256 swapAmount) {
-        if (sqrtP <= sqrtA) return (false, balance1);
-        if (sqrtP >= sqrtB) return (true, balance0);
+        // Price outside the target range → the position needs only one token.
+        if (sqrtP <= sqrtA) return (false, balance1); // below range: all token0 → sell all token1
+        if (sqrtP >= sqrtB) return (true, balance0); //  above range: all token1 → sell all token0
 
-        uint128 l0 = LiquidityAmounts.getLiquidityForAmount0(
-            sqrtP,
-            sqrtB,
-            balance0
-        );
-        uint128 l1 = LiquidityAmounts.getLiquidityForAmount1(
-            sqrtA,
-            sqrtP,
-            balance1
+        // ── In range: swap the minimum needed to reach the range's value ratio. ──
+        // At the current price the range wants token0 and token1 in proportion
+        // (need0 : need1) per unit of liquidity. We compare the *value* of what we
+        // hold against that target split and swap only the difference. Working in
+        // token1 (value) units — converting via the spot price — keeps this correct
+        // regardless of the token prices (e.g. 1 BTC ≈ tens of thousands of MUSD) and
+        // never degenerates to "swap everything" when one balance is zero.
+        uint128 lRef = 1e18; // reference liquidity; cancels out, used only for the ratio
+        uint256 need0 = LiquidityAmounts.getAmount0ForLiquidity(sqrtP, sqrtB, lRef);
+        uint256 need1 = LiquidityAmounts.getAmount1ForLiquidity(sqrtA, sqrtP, lRef);
+
+        uint256 need0InT1 = token0ToToken1(need0, sqrtP); // token0 leg valued in token1
+        uint256 targetDen = need0InT1 + need1; // total target value (token1 units)
+        if (targetDen == 0) return (false, 0);
+
+        uint256 v0 = token0ToToken1(balance0, sqrtP); // current token0 value, in token1
+        uint256 vTot = v0 + balance1; // total holdings value, in token1
+        uint256 targetV0 = Math.mulDiv(
+            vTot,
+            need0InT1,
+            targetDen,
+            Math.Rounding.Floor
         );
 
-        if (l0 >= l1) {
-            uint256 keep0 = LiquidityAmounts.getAmount0ForLiquidity(
-                sqrtP,
-                sqrtB,
-                l1
-            );
-            return (true, balance0 > keep0 ? balance0 - keep0 : 0);
+        if (v0 > targetV0) {
+            // Too much token0 → sell the excess token0 value for token1.
+            uint256 excessValue = v0 - targetV0; // token1 units
+            swapAmount = token1ToToken0(excessValue, sqrtP); // → token0 amount to sell
+            if (swapAmount > balance0) swapAmount = balance0;
+            return (true, swapAmount);
         } else {
-            uint256 keep1 = LiquidityAmounts.getAmount1ForLiquidity(
-                sqrtA,
-                sqrtP,
-                l0
-            );
-            return (false, balance1 > keep1 ? balance1 - keep1 : 0);
+            // Too little token0 → sell token1 for token0. Value-in-token1 == token1 amount.
+            uint256 deficitValue = targetV0 - v0;
+            if (deficitValue > balance1) deficitValue = balance1;
+            return (false, deficitValue);
         }
     }
 

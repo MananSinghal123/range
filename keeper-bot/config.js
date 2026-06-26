@@ -7,7 +7,7 @@ import { logErr } from "./logger.js";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
-export const {PRIVATE_KEY,RPC_URL,WS_URL,POLL_INTERVAL_MS = "30000", MAX_GAS_GWEI = "50"} = process.env;
+export const {PRIVATE_KEY,RPC_URL,WS_URL,POLL_INTERVAL_MS = "30000", MAX_GAS_GWEI = "50", LENS_ADDRESS} = process.env;
 
 export const MAX_GAS_PRICE = ethers.parseUnits(MAX_GAS_GWEI, "gwei");
 
@@ -34,6 +34,7 @@ function parseStrategy(raw, label) {
 export function configuredVaults() {
   const vaultAddrs   = (process.env.VAULT_ADDRS ?? "").split(",").map((v) => v.trim()).filter(Boolean);
   const poolAddrs    = (process.env.POOL_ADDRS  ?? "").split(",").map((v) => v.trim()).filter(Boolean);
+  const lensAddrs    = (process.env.LENS_ADDRS  ?? "").split(",").map((v) => v.trim()).filter(Boolean);
   const strategyRaws = (process.env.STRATEGIES  ?? process.env.STRATEGY ?? "")
     .split(",").map((v) => v.trim());
 
@@ -44,6 +45,7 @@ export function configuredVaults() {
         label,
         vault,
         pool:     poolAddrs[i] ?? "",
+        lens:     lensAddrs[i] ?? LENS_ADDRESS ?? "",
         strategy: parseStrategy(strategyRaws[i] ?? strategyRaws[0], label),
       };
     });
@@ -53,6 +55,7 @@ export function configuredVaults() {
     label:    "vault-1",
     vault:    process.env.VAULT_ADDRESS ?? "",
     pool:     process.env.POOL_ADDRESS  ?? "",
+    lens:     LENS_ADDRESS ?? "",
     strategy: parseStrategy(process.env.STRATEGY, "vault-1"),
   }];
 }

@@ -10,14 +10,15 @@ import { vaultState, networkState } from "./state.js";
 import { isNetworkError, isRetryableError, jitter } from "./errors.js";
 import { logInfo, logWarn, logErr } from "./logger.js";
 
-const COMPUTE_PARAMS_ABI = [
-  "function computeRebalanceParams(uint8 strategy) view returns (bool swapZeroForOne, uint256 swapAmount)",
+const VAULT_LENS_ABI = [
+  "function isOutOfRange(address vault) view returns (bool)",
+  "function computeRebalanceParams(address vault) view returns (bool swapZeroForOne, uint256 swapAmount)",
 ];
 
-async function computeRebalanceArgs(vaultAddr, strategy) {
-  const query = new ethers.Contract(vaultAddr, COMPUTE_PARAMS_ABI, provider);
-  const [swapZeroForOne, swapAmount] = await query.computeRebalanceParams(strategy);
-  return [swapZeroForOne, swapAmount, strategy];
+async function computeRebalanceArgs(lensAddr, vaultAddr) {
+  const lens = new ethers.Contract(lensAddr, VAULT_LENS_ABI, provider);
+  const [swapZeroForOne, swapAmount] = await lens.computeRebalanceParams(vaultAddr);
+  return [swapZeroForOne, swapAmount];
 }
 
 // ── Core functions ─────────────────────────────────────────────────────────────
@@ -60,6 +61,13 @@ export async function checkAndRebalance(watched) {
     provider,
   );
 
+  if (!watched.lens) {
+    logErr(watched.label, "LENS_ADDRESS not configured — set it in keeper-bot/.env");
+    return;
+  }
+
+  const lens = new ethers.Contract(watched.lens, VAULT_LENS_ABI, provider);
+
   try {
     const tokenId = await vault.tokenId();
     if (tokenId === 0n) {
@@ -67,7 +75,7 @@ export async function checkAndRebalance(watched) {
       return;
     }
 
-    const isOutOfRange = await vault.isOutOfRange();
+    const isOutOfRange = await lens.isOutOfRange(watched.vault);
     logInfo(watched.label, `isOutOfRange=${isOutOfRange}`);
     if (!isOutOfRange) {
       vs.consecutiveFailures = 0;
@@ -99,8 +107,8 @@ export async function checkAndRebalance(watched) {
     }
 
     const rebalanceArgs = await computeRebalanceArgs(
+      watched.lens,
       watched.vault,
-      watched.strategy,
     );
     logInfo(
       watched.label,
