@@ -7,6 +7,7 @@ import {
   RebalancerVaultABI,
 } from "./config.js";
 import { vaultState, networkState } from "./state.js";
+import { withNonce } from "./nonceManager.js";
 import { isNetworkError, isRetryableError, jitter } from "./errors.js";
 import { logInfo, logWarn, logErr } from "./logger.js";
 
@@ -30,12 +31,15 @@ export async function buildAndSendTx(contract, method, args, gasPrice, label) {
     from: signer.address,
   });
 
-  const response = await signer.sendTransaction({
-    ...txRequest,
-    nonce: await provider.getTransactionCount(signer.address, "pending"),
-    gasLimit: (gasEstimate * 120n) / 100n,
-    gasPrice,
-  });
+  // Serialize nonce assignment + submission across all vaults (shared signer).
+  const response = await withNonce((nonce) =>
+    signer.sendTransaction({
+      ...txRequest,
+      nonce,
+      gasLimit: (gasEstimate * 120n) / 100n,
+      gasPrice,
+    }),
+  );
 
   logInfo(label, `${method} tx sent: ${response.hash}`);
   return response.wait();

@@ -140,7 +140,7 @@ export function VaultStats({
           isLoading ? <Skeleton /> :
           paused === undefined ? "—" :
           paused ? (
-            <span style={{ color: "#DC2626" }}>Paused</span>
+            <span style={{ color: "var(--error)" }}>Paused</span>
           ) : (
             <span className="flex items-center gap-1.5" style={{ color: "var(--green)" }}>
               <span className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ background: "var(--green)" }} />

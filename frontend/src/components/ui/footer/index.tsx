@@ -6,9 +6,7 @@ export function Footer() {
         href="https://faucet.test.mezo.org"
         target="_blank"
         rel="noreferrer"
-        style={{ color: "var(--text-3)" }}
-        onMouseEnter={(e) => (e.currentTarget.style.color = "var(--red)")}
-        onMouseLeave={(e) => (e.currentTarget.style.color = "var(--text-3)")}
+        className="link-muted"
       >
         Get test tokens
       </a>{" "}·{" "}
@@ -16,9 +14,7 @@ export function Footer() {
         href="https://mezo.org/docs"
         target="_blank"
         rel="noreferrer"
-        style={{ color: "var(--text-3)" }}
-        onMouseEnter={(e) => (e.currentTarget.style.color = "var(--red)")}
-        onMouseLeave={(e) => (e.currentTarget.style.color = "var(--text-3)")}
+        className="link-muted"
       >
         Docs
       </a>

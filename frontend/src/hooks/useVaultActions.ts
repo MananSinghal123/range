@@ -32,6 +32,7 @@ interface Params {
   initialized: boolean;
   paused: boolean | undefined;
   isConnected: boolean;
+  maxAmount: bigint | undefined;
 }
 
 export function useVaultActions({
@@ -51,6 +52,7 @@ export function useVaultActions({
   initialized,
   paused,
   isConnected,
+  maxAmount,
 }: Params) {
   const { address } = useAccount();
   const [txState, setTxState] = useState<TxState>("idle");
@@ -107,8 +109,6 @@ export function useVaultActions({
     query: { enabled: !!amountBig },
   });
 
-  console.log("Preview Result:", previewResult);
-
   const isDepositingMUSD = tab === "deposit" && depositToken === "MUSD";
   const allowance = isDepositingMUSD ? allowance0 : allowance1;
   const tokenAddress = isDepositingMUSD ? token0Address : token1Address;
@@ -119,9 +119,16 @@ export function useVaultActions({
     allowance !== undefined &&
     allowance < amountBig;
 
+  const exceedsMax =
+    amountBig !== undefined &&
+    amountBig > BigInt(0) &&
+    maxAmount !== undefined &&
+    amountBig > maxAmount;
+
   const isProcessing =
     txState === "approving" || txState === "pending" || isTxPending;
-  const isDisabled = !isConnected || paused || !amountBig || isProcessing;
+  const isDisabled =
+    !isConnected || paused || !amountBig || exceedsMax || isProcessing;
 
   const blockingMessage = paused
     ? "The vault is paused. No deposits or withdrawals at this time."
@@ -204,6 +211,7 @@ export function useVaultActions({
     txState,
     isProcessing,
     isDisabled,
+    exceedsMax,
     needsApproval,
     blockingMessage,
     // Handlers

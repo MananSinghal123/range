@@ -44,7 +44,7 @@ export function WalletSection() {
                   <button
                     onClick={openChainModal}
                     type="button"
-                    className="flex items-center gap-1.5 text-sm font-medium px-3 py-1.5 rounded-md border transition-colors cursor-pointer"
+                    className="flex items-center gap-1.5 text-sm font-medium px-3 min-h-[44px] rounded-md border transition-colors cursor-pointer"
                     style={{
                       background: "var(--surface)",
                       borderColor: "var(--border)",
@@ -77,7 +77,7 @@ export function WalletSection() {
                   <button
                     onClick={openAccountModal}
                     type="button"
-                    className="text-sm font-medium px-3 py-1.5 rounded-md border transition-colors cursor-pointer"
+                    className="text-sm font-medium px-3 min-h-[44px] rounded-md border transition-colors cursor-pointer"
                     style={{
                       background: "var(--surface)",
                       borderColor: "var(--border)",

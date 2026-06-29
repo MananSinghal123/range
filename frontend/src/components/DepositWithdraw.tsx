@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { formatUnits } from "viem";
-import { Loader2 } from "lucide-react";
+import { Loader2, Check, ChevronDown } from "lucide-react";
 import { formatTokenAmount } from "@/lib/utils";
 import {
   useVaultActions,
@@ -50,6 +50,17 @@ export function DepositWithdraw({
   const [tab, setTab] = useState<Tab>("deposit");
   const [depositToken, setDepositToken] = useState<DepositToken>("MUSD");
   const [amount, setAmount] = useState("");
+  const [tokenMenuOpen, setTokenMenuOpen] = useState(false);
+
+  function selectToken(dt: DepositToken) {
+    setDepositToken(dt);
+    setAmount("");
+    setTokenMenuOpen(false);
+  }
+
+  const balance = depositToken === "MUSD" ? balance0 : balance1;
+  // Deposit caps at the token balance; withdraw caps at redeemable shares.
+  const maxAmount = tab === "withdraw" ? maxRedeem : balance;
 
   const actions = useVaultActions({
     vaultAddress,
@@ -68,9 +79,10 @@ export function DepositWithdraw({
     initialized,
     paused,
     isConnected,
+    maxAmount,
   });
 
-  const balance = depositToken === "MUSD" ? balance0 : balance1;
+  const amountInputId = "deposit-withdraw-amount";
 
   function tabStyle(t: Tab) {
     const active = tab === t;
@@ -81,17 +93,6 @@ export function DepositWithdraw({
       background: "transparent",
     };
   }
-
-  function tokenBtnStyle(dt: DepositToken) {
-    const active = depositToken === dt;
-    return {
-      background: active ? "var(--red-bg)" : "var(--surface)",
-      color: active ? "var(--red)" : "var(--text-2)",
-      border: `1px solid ${active ? "var(--red-border)" : "var(--border)"}`,
-    };
-  }
-
-  console.log(balance);
 
   return (
     <div
@@ -125,34 +126,6 @@ export function DepositWithdraw({
       </div>
 
       <div className="p-5 space-y-4">
-        {/* Token selector (deposit only) */}
-        {tab === "deposit" && (
-          <div className="flex gap-2">
-            <button
-              type="button"
-              onClick={() => {
-                setDepositToken("MUSD");
-                setAmount("");
-              }}
-              className="px-3 py-1.5 rounded-md text-sm font-medium cursor-pointer"
-              style={tokenBtnStyle("MUSD")}
-            >
-              {symbol0}
-            </button>
-            <button
-              type="button"
-              onClick={() => {
-                setDepositToken("BTC");
-                setAmount("");
-              }}
-              className="px-3 py-1.5 rounded-md text-sm font-medium cursor-pointer"
-              style={tokenBtnStyle("BTC")}
-            >
-              {symbol1}
-            </button>
-          </div>
-        )}
-
         {/* Amount input */}
         <div
           className="rounded-lg p-3.5"
@@ -166,23 +139,27 @@ export function DepositWithdraw({
           onBlur={(e) => (e.currentTarget.style.borderColor = "var(--border)")}
         >
           <div className="flex items-center justify-between mb-2">
-            <span className="label">Amount</span>
-            {balance !== undefined && (
+            <label htmlFor={amountInputId} className="label">
+              Amount
+            </label>
+            {maxAmount !== undefined && (
               <button
                 type="button"
                 onClick={() =>
-                  setAmount(formatUnits(balance, actions.inputDecimals))
+                  setAmount(formatUnits(maxAmount, actions.inputDecimals))
                 }
-                className="label cursor-pointer"
+                className="label cursor-pointer px-1.5 py-1 -my-1 -mr-1.5"
                 style={{ color: "var(--red)" }}
               >
-                Max {formatTokenAmount(balance, actions.inputDecimals, 6)}
+                Max {formatTokenAmount(maxAmount, actions.inputDecimals, 6)}
               </button>
             )}
           </div>
           <div className="flex items-baseline gap-2">
             <input
+              id={amountInputId}
               type="number"
+              inputMode="decimal"
               value={amount}
               onChange={(e) => setAmount(e.target.value)}
               placeholder="0"
@@ -190,12 +167,84 @@ export function DepositWithdraw({
               className="flex-1 bg-transparent font-mono text-3xl font-medium outline-none disabled:opacity-40"
               style={{ color: "var(--text)", minWidth: 0 }}
             />
-            <span
-              className="text-sm font-medium flex-shrink-0"
-              style={{ color: "var(--text-2)" }}
-            >
-              {actions.inputSymbol}
-            </span>
+            {tab === "deposit" ? (
+              <div className="relative flex-shrink-0">
+                <button
+                  type="button"
+                  onClick={() => setTokenMenuOpen((o) => !o)}
+                  aria-haspopup="listbox"
+                  aria-expanded={tokenMenuOpen}
+                  className="flex items-center gap-1 px-2.5 py-1.5 rounded-md text-sm font-medium cursor-pointer transition-colors"
+                  style={{
+                    background: "var(--surface)",
+                    border: "1px solid var(--border)",
+                    color: "var(--text)",
+                  }}
+                >
+                  {actions.inputSymbol}
+                  <ChevronDown
+                    className="w-3.5 h-3.5 transition-transform"
+                    style={{
+                      color: "var(--text-3)",
+                      transform: tokenMenuOpen ? "rotate(180deg)" : "none",
+                    }}
+                  />
+                </button>
+
+                {tokenMenuOpen && (
+                  <>
+                    {/* Click-outside backdrop */}
+                    <div
+                      className="fixed inset-0 z-10"
+                      onClick={() => setTokenMenuOpen(false)}
+                    />
+                    <div
+                      role="listbox"
+                      className="absolute right-0 top-full mt-1.5 z-20 min-w-[7rem] rounded-lg overflow-hidden"
+                      style={{
+                        background: "#fff",
+                        border: "1px solid var(--border)",
+                        boxShadow: "0 8px 24px rgba(0,0,0,0.08)",
+                      }}
+                    >
+                      {(
+                        [
+                          { key: "MUSD" as DepositToken, label: symbol0 },
+                          { key: "BTC" as DepositToken, label: symbol1 },
+                        ]
+                      ).map(({ key, label }) => {
+                        const active = depositToken === key;
+                        return (
+                          <button
+                            key={key}
+                            type="button"
+                            role="option"
+                            aria-selected={active}
+                            onClick={() => selectToken(key)}
+                            className="w-full text-left px-3 min-h-[44px] text-sm font-medium cursor-pointer transition-colors"
+                            style={{
+                              background: active
+                                ? "var(--red-bg)"
+                                : "transparent",
+                              color: active ? "var(--red)" : "var(--text)",
+                            }}
+                          >
+                            {label}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </>
+                )}
+              </div>
+            ) : (
+              <span
+                className="text-sm font-medium flex-shrink-0"
+                style={{ color: "var(--text-2)" }}
+              >
+                {actions.inputSymbol}
+              </span>
+            )}
           </div>
         </div>
 
@@ -217,14 +266,26 @@ export function DepositWithdraw({
           </p>
         )}
 
+        {/* Over-limit warning */}
+        {actions.exceedsMax && (
+          <p className="text-sm" style={{ color: "var(--error)" }}>
+            {tab === "withdraw"
+              ? "Amount exceeds your redeemable shares"
+              : `Amount exceeds your ${actions.inputSymbol} balance`}
+          </p>
+        )}
+
         {/* Transaction status */}
         {actions.txState === "success" && (
-          <p className="text-sm font-medium" style={{ color: "var(--green)" }}>
-            ✓ Transaction confirmed
+          <p
+            className="text-sm font-medium flex items-center gap-1.5"
+            style={{ color: "var(--green)" }}
+          >
+            <Check className="w-4 h-4 flex-shrink-0" /> Transaction confirmed
           </p>
         )}
         {actions.txState === "error" && (
-          <p className="text-sm" style={{ color: "#DC2626" }}>
+          <p className="text-sm" style={{ color: "var(--error)" }}>
             Transaction failed — please try again
           </p>
         )}

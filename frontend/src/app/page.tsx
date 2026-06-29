@@ -31,8 +31,6 @@ function VaultPageContent() {
   const strategyKey = resolveStrategy(searchParams.get("strategy"));
   const vaultAddress = STRATEGIES[strategyKey].vaultAddress;
 
-  console.log(vaultAddress);
-
   const {
     isConnected,
     sym0,
@@ -51,23 +49,6 @@ function VaultPageContent() {
     tickUpper,
   } = useVaultPage(vaultAddress);
 
-  console.log("Vault data:", {
-    isConnected,
-    sym0,
-    sym1,
-    vaultSymbol,
-    d0,
-    d1,
-    vault,
-    pool,
-    user,
-    events,
-    apy,
-    rebalanceCount,
-    totalFee0,
-    tickLower,
-    tickUpper,
-  });
   const handleStrategySelect = useCallback(
     (key: StrategyKey) => {
       router.push(`?strategy=${key}`);
@@ -76,7 +57,7 @@ function VaultPageContent() {
   );
 
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-dvh bg-white">
       <Header />
 
       <main className="max-w-5xl mx-auto px-5 py-8 space-y-6">
@@ -117,7 +98,7 @@ function VaultPageContent() {
         {/* 2-column layout */}
         <div className="grid grid-cols-1 lg:grid-cols-[1fr_360px] gap-6 items-start">
           {/* Left: Deposit/Withdraw + Price Range */}
-          <div className="space-y-6 order-2 lg:order-1">
+          <div className="space-y-6">
             <DepositWithdraw
               vaultAddress={vaultAddress}
               paused={vault.paused}
@@ -150,7 +131,7 @@ function VaultPageContent() {
           </div>
 
           {/* Right: User position + History */}
-          <div className="space-y-6 order-1 lg:order-2">
+          <div className="space-y-6">
             <UserPosition
               vaultAddress={vaultAddress}
               shares={user.shares}

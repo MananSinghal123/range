@@ -97,10 +97,7 @@ export function RebalanceHistory({
                     href={explorerUrl(chainId, ev.txHash)}
                     target="_blank"
                     rel="noreferrer"
-                    className="mono text-xs transition-colors"
-                    style={{ color: "var(--red)" }}
-                    onMouseEnter={(e) => (e.currentTarget.style.color = "var(--red-dark)")}
-                    onMouseLeave={(e) => (e.currentTarget.style.color = "var(--red)")}
+                    className="link-red mono text-xs"
                   >
                     {formatAddr(ev.txHash)}
                   </a>

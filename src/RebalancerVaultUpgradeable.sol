@@ -27,7 +27,6 @@ import {
 import {ICLSwapRouter} from "./interfaces/router/ICLSwapRouter.sol";
 import {IDexAdapter} from "./adapters/interfaces/IDexAdapter.sol";
 import {IStrategy} from "./strategies/interfaces/IStrategy.sol";
-
 import {VaultStorageLib} from "./libraries/VaultStorageLib.sol";
 import {OracleLib} from "./libraries/OracleLib.sol";
 import {VaultMath} from "./libraries/VaultMath.sol";

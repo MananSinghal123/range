@@ -40,7 +40,7 @@ function RangeBar({
   const currentPct = Math.max(0, Math.min(100, pct(currentTick)));
 
   const inRange = !isOutOfRange;
-  const accent = inRange ? "var(--green)" : "#DC2626";
+  const accent = inRange ? "var(--green)" : "var(--error)";
   const fill = inRange ? "rgba(22,163,74,0.12)" : "rgba(220,38,38,0.12)";
 
   return (
@@ -134,11 +134,11 @@ export function PriceRangeCard({
         {isOutOfRange !== undefined && (
           <span
             className="flex items-center gap-1.5 text-xs font-medium"
-            style={{ color: earning ? "var(--green)" : "#DC2626" }}
+            style={{ color: earning ? "var(--green)" : "var(--error)" }}
           >
             <span
               className="w-1.5 h-1.5 rounded-full"
-              style={{ background: earning ? "var(--green)" : "#DC2626" }}
+              style={{ background: earning ? "var(--green)" : "var(--error)" }}
             />
             {earning ? "Earning fees" : "Out of range"}
           </span>

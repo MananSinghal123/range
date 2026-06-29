@@ -3,10 +3,7 @@ export function ConnectWalletButton({ onClick }: { onClick: () => void }) {
     <button
       type="button"
       onClick={onClick}
-      className="cursor-pointer text-sm font-medium px-4 py-1.5 rounded-md transition-colors"
-      style={{ background: "var(--red)", color: "#fff" }}
-      onMouseEnter={(e) => (e.currentTarget.style.background = "var(--red-dark)")}
-      onMouseLeave={(e) => (e.currentTarget.style.background = "var(--red)")}
+      className="btn-red cursor-pointer text-sm font-medium px-4 min-h-[44px] rounded-md"
     >
       Connect Wallet
     </button>
@@ -18,8 +15,8 @@ export function WrongNetworkButton({ onClick }: { onClick: () => void }) {
     <button
       type="button"
       onClick={onClick}
-      className="cursor-pointer text-sm font-medium px-4 py-1.5 rounded-md"
-      style={{ background: "#FEF2F2", color: "#DC2626", border: "1px solid #FECACA" }}
+      className="cursor-pointer text-sm font-medium px-4 min-h-[44px] rounded-md"
+      style={{ background: "var(--red-bg)", color: "var(--error)", border: "1px solid var(--red-border)" }}
     >
       Wrong network
     </button>

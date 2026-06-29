@@ -9,13 +9,14 @@
   --border-focus: #E11D48;
   --text:         #0D0D0D;
   --text-2:       #595959;
-  --text-3:       #A0A0A0;
+  --text-3:       #737373;
   --red:          #E11D48;
   --red-dark:     #BE123C;
   --red-bg:       #FFF1F2;
   --red-border:   #FECDD3;
   --green:        #16A34A;
   --green-bg:     #F0FDF4;
+  --error:        #DC2626;
 }
 
 *,
@@ -64,6 +65,17 @@ input[type="number"] { -moz-appearance: textfield; }
   .btn-red:hover:not(:disabled) { background: var(--red-dark); }
   .btn-red:active:not(:disabled) { background: var(--red-dark); }
   .btn-red:disabled { opacity: 0.35; cursor: not-allowed; }
+
+  .link-muted { color: var(--text-3); transition: color 120ms ease; }
+  .link-muted:hover, .link-muted:active { color: var(--red); }
+
+  .link-red { color: var(--red); transition: color 120ms ease; }
+  .link-red:hover, .link-red:active { color: var(--red-dark); }
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
 }
 
 @media (prefers-reduced-motion: reduce) {

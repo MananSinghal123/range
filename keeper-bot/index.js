@@ -1,5 +1,6 @@
 import { configuredVaults, POLL_INTERVAL_MS, MAX_GAS_GWEI, WS_URL } from "./config.js";
 import { signer, resetProvider } from "./provider.js";
+import { resetNonce } from "./nonceManager.js";
 import { vaultState, networkState, PROVIDER_RESET_AFTER, initState } from "./state.js";
 import { checkAndRebalance, preflight } from "./rebalancer.js";
 import { attachSwapListener } from "./events.js";
@@ -46,6 +47,7 @@ async function main() {
       logErr("runtime", `${networkState.failures} network failures — reconnecting provider`);
       poolContracts.forEach((c) => c.removeAllListeners("Swap"));
       resetProvider();
+      resetNonce();
       poolContracts = WS_URL ? watched.filter((v) => v.pool).map((v) => attachSwapListener(v)) : [];
     }
 
