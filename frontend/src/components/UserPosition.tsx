@@ -33,20 +33,22 @@ export function UserPosition({
 
   return (
     <div
-      className="rounded-xl p-4 space-y-3"
+      className="rounded-[20px] p-5 space-y-3 animate-in"
       style={{
-        background: "var(--red-bg)",
+        background:
+          "linear-gradient(155deg, var(--red-bg) 0%, #fff 70%)",
         border: "1px solid var(--red-border)",
+        boxShadow: "var(--shadow-glow)",
       }}
     >
       <span className="label" style={{ color: "var(--red)" }}>
         Your Deposit
       </span>
 
-      <div className="flex items-baseline justify-between">
-        <div>
+      <div className="flex items-baseline justify-between gap-3">
+        <div className="min-w-0">
           <p
-            className="mono text-2xl font-semibold"
+            className="mono text-[26px] leading-none font-bold truncate"
             style={{ color: "var(--text)" }}
           >
             {assetValue !== undefined

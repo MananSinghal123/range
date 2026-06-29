@@ -17,32 +17,34 @@ interface VaultStatsProps {
   tickUpper?: number;
 }
 
-function Stat({ label, value }: { label: string; value: React.ReactNode }) {
-  return (
-    <div className="flex flex-col gap-0.5">
-      <span className="label">{label}</span>
-      <span className="mono font-medium text-base" style={{ color: "var(--text)" }}>
-        {value}
-      </span>
-    </div>
-  );
-}
-
-function Sep() {
-  return (
-    <span
-      className="hidden sm:block w-px self-stretch my-1"
-      style={{ background: "var(--border)" }}
-    />
-  );
-}
-
 function Skeleton() {
   return (
     <span
-      className="inline-block h-4 w-16 rounded"
+      className="inline-block h-5 w-20 rounded-md"
       style={{ background: "var(--surface)", animation: "pulse 1.5s ease-in-out infinite" }}
     />
+  );
+}
+
+function Stat({
+  label,
+  value,
+  highlight,
+}: {
+  label: string;
+  value: React.ReactNode;
+  highlight?: boolean;
+}) {
+  return (
+    <div className="flex flex-col gap-1 px-3.5 py-3 sm:px-4 sm:py-3.5">
+      <span className="label">{label}</span>
+      <span
+        className="mono font-semibold text-[15px] sm:text-base"
+        style={{ color: highlight ? "var(--red)" : "var(--text)" }}
+      >
+        {value}
+      </span>
+    </div>
   );
 }
 
@@ -63,92 +65,79 @@ export function VaultStats({
   const d0 = decimals0 ?? 8;
   const sym = symbol0 ?? "TOKEN0";
 
+  const tiles: { label: string; value: React.ReactNode; highlight?: boolean }[] = [
+    {
+      label: "TVL",
+      value:
+        totalAssets !== undefined
+          ? `${formatTokenAmount(totalAssets, d0, 6)} ${sym}`
+          : "—",
+    },
+    {
+      label: "APY",
+      value: apy !== undefined ? `${apy.toFixed(2)}%` : "—",
+      highlight: apy !== undefined,
+    },
+    {
+      label: "Fees Earned",
+      value:
+        totalFee0 !== undefined ? `${formatTokenAmount(totalFee0, d0, 6)} ${sym}` : "—",
+    },
+    {
+      label: "Status",
+      value:
+        paused === undefined ? (
+          "—"
+        ) : paused ? (
+          <span style={{ color: "var(--error)" }}>Paused</span>
+        ) : (
+          <span className="flex items-center gap-1.5" style={{ color: "var(--green)" }}>
+            <span
+              className="w-2 h-2 rounded-full flex-shrink-0"
+              style={{ background: "var(--green)", boxShadow: "0 0 0 3px rgba(22,163,74,0.16)" }}
+            />
+            Active
+          </span>
+        ),
+    },
+    {
+      label: "Range",
+      value:
+        tickLower !== undefined && tickUpper !== undefined
+          ? `${tickLower} / ${tickUpper}`
+          : "—",
+    },
+    {
+      label: "Share Price",
+      value:
+        sharePrice !== undefined ? `${formatTokenAmount(sharePrice, d0, 8)} ${sym}` : "—",
+    },
+    {
+      label: "Rebalances",
+      value: rebalanceCount !== undefined ? String(rebalanceCount) : "—",
+    },
+    {
+      label: "Perf Fee",
+      value: performanceFeeBps !== undefined ? formatBps(performanceFeeBps) : "—",
+    },
+  ];
+
   return (
-    <div
-      className="flex flex-wrap gap-x-5 gap-y-4 sm:gap-x-7 items-start py-4"
-      style={{ borderTop: "1px solid var(--border)", borderBottom: "1px solid var(--border)" }}
-    >
-      <Stat
-        label="TVL"
-        value={
-          isLoading ? <Skeleton /> :
-          totalAssets !== undefined
-            ? `${formatTokenAmount(totalAssets, d0, 6)} ${sym}`
-            : "—"
-        }
-      />
-      <Sep />
-      <Stat
-        label="Range"
-        value={
-          isLoading ? <Skeleton /> :
-          tickLower !== undefined && tickUpper !== undefined
-            ? `${tickLower} / ${tickUpper}`
-            : "—"
-        }
-      />
-      <Sep />
-      <Stat
-        label="APY"
-        value={
-          isLoading ? <Skeleton /> :
-          apy !== undefined
-            ? `${apy.toFixed(2)}%`
-            : "—"
-        }
-      />
-      <Sep />
-      <Stat
-        label="Fees Earned"
-        value={
-          isLoading ? <Skeleton /> :
-          totalFee0 !== undefined
-            ? `${formatTokenAmount(totalFee0, d0, 6)} ${sym}`
-            : "—"
-        }
-      />
-      <Sep />
-      <Stat
-        label="Rebalances"
-        value={
-          isLoading ? <Skeleton /> :
-          rebalanceCount !== undefined ? String(rebalanceCount) : "—"
-        }
-      />
-      <Sep />
-      <Stat
-        label="Perf Fee"
-        value={
-          isLoading ? <Skeleton /> :
-          performanceFeeBps !== undefined ? formatBps(performanceFeeBps) : "—"
-        }
-      />
-      <Sep />
-      <Stat
-        label="Share Price"
-        value={
-          isLoading ? <Skeleton /> :
-          sharePrice !== undefined
-            ? `${formatTokenAmount(sharePrice, d0, 8)} ${sym}`
-            : "—"
-        }
-      />
-      <Sep />
-      <Stat
-        label="Status"
-        value={
-          isLoading ? <Skeleton /> :
-          paused === undefined ? "—" :
-          paused ? (
-            <span style={{ color: "var(--error)" }}>Paused</span>
-          ) : (
-            <span className="flex items-center gap-1.5" style={{ color: "var(--green)" }}>
-              <span className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ background: "var(--green)" }} />
-              Active
-            </span>
-          )
-        }
-      />
+    <div className="card overflow-hidden animate-in">
+      <div
+        className="grid grid-cols-2 sm:grid-cols-4"
+        style={{ gap: 1, background: "var(--border-2)" }}
+      >
+        {tiles.map((t, i) => (
+          <div key={i} style={{ background: "var(--surface-2)" }}>
+            <Stat
+              label={t.label}
+              highlight={t.highlight}
+              value={isLoading ? <Skeleton /> : t.value}
+            />
+          </div>
+        ))}
+      </div>
     </div>
   );
 }

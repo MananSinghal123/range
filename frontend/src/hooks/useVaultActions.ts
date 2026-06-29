@@ -6,10 +6,36 @@ import {
   useWaitForTransactionReceipt,
   useReadContract,
   useAccount,
+  useChainId,
   usePublicClient,
 } from "wagmi";
 import { parseUnits, maxUint256 } from "viem";
 import { VAULT_ABI, ERC20_ABI } from "@/lib/contracts";
+import { explorerTxUrl } from "@/lib/utils";
+
+/** Turn an unknown thrown value into a short, human-friendly message. */
+function friendlyError(err: unknown): string {
+  const raw =
+    (typeof err === "object" && err && "shortMessage" in err
+      ? String((err as { shortMessage?: unknown }).shortMessage)
+      : err instanceof Error
+        ? err.message
+        : String(err)) || "";
+  const lower = raw.toLowerCase();
+  if (lower.includes("user rejected") || lower.includes("user denied"))
+    return "You rejected the request in your wallet.";
+  if (lower.includes("insufficient funds"))
+    return "Insufficient funds to cover the transaction and gas.";
+  if (lower.includes("exceeds") && lower.includes("balance"))
+    return "Amount exceeds your available balance.";
+  if (lower.includes("slippage"))
+    return "Price moved too much (slippage). Try again.";
+  // First sentence only — keep it readable.
+  const firstLine = raw.split("\n")[0]?.trim();
+  return firstLine && firstLine.length < 140
+    ? firstLine
+    : "The transaction could not be completed.";
+}
 
 export type Tab = "deposit" | "withdraw";
 export type DepositToken = "MUSD" | "BTC";
@@ -55,8 +81,10 @@ export function useVaultActions({
   maxAmount,
 }: Params) {
   const { address } = useAccount();
+  const chainId = useChainId();
   const [txState, setTxState] = useState<TxState>("idle");
   const [txHash, setTxHash] = useState<`0x${string}` | undefined>();
+  const [errorMessage, setErrorMessage] = useState<string | undefined>();
 
   const publicClient = usePublicClient();
   const { writeContractAsync } = useWriteContract();
@@ -71,15 +99,15 @@ export function useVaultActions({
   useEffect(() => {
     if (isTxSuccess) {
       setTxState("success");
-      const t = setTimeout(() => setTxState("idle"), 5000);
-      return () => clearTimeout(t);
     }
     if (isTxError) {
       console.error("On-chain transaction reverted:", txReceiptError);
+      setErrorMessage(
+        "The transaction was submitted but reverted on-chain. No funds were moved.",
+      );
       setTxState("error");
-      setTimeout(() => setTxState("idle"), 4000);
     }
-  }, [isTxSuccess, isTxError]);
+  }, [isTxSuccess, isTxError, txReceiptError]);
 
   const isToken0 = tab === "withdraw" || depositToken === "MUSD";
   const inputDecimals = isToken0 ? decimals0 : decimals1;
@@ -138,6 +166,8 @@ export function useVaultActions({
 
   async function handleAction() {
     if (!amountBig || !address) return;
+    setErrorMessage(undefined);
+    setTxHash(undefined);
     try {
       let hash: `0x${string}` | undefined;
 
@@ -195,10 +225,17 @@ export function useVaultActions({
       if (hash) setTxHash(hash);
     } catch (err) {
       console.error("Transaction failed:", err);
+      setErrorMessage(friendlyError(err));
       setTxState("error");
-      setTimeout(() => setTxState("idle"), 4000);
     }
   }
+
+  function dismissStatus() {
+    setTxState("idle");
+    setErrorMessage(undefined);
+  }
+
+  const txUrl = txHash ? explorerTxUrl(chainId, txHash) : undefined;
 
   return {
     // Derived input
@@ -209,6 +246,9 @@ export function useVaultActions({
     previewSuffix,
     // State
     txState,
+    txHash,
+    txUrl,
+    errorMessage,
     isProcessing,
     isDisabled,
     exceedsMax,
@@ -216,5 +256,6 @@ export function useVaultActions({
     blockingMessage,
     // Handlers
     handleAction,
+    dismissStatus,
   };
 }

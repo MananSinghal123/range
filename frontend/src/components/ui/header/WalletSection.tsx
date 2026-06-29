@@ -1,10 +1,16 @@
 "use client";
 
 import { ConnectButton } from "@rainbow-me/rainbowkit";
+import { Wallet } from "lucide-react";
 
 import { ConnectWalletButton, WrongNetworkButton } from "./utils";
 
-export function WalletSection() {
+interface Props {
+  /** Render the account control full-width (used inside the mobile drawer) */
+  block?: boolean;
+}
+
+export function WalletSection({ block = false }: Props) {
   return (
     <ConnectButton.Custom>
       {({
@@ -25,71 +31,46 @@ export function WalletSection() {
 
         return (
           <div
+            className={block ? "w-full" : ""}
             {...(!ready && {
               "aria-hidden": true,
-              style: {
-                opacity: 0,
-                pointerEvents: "none",
-                userSelect: "none",
-              },
+              style: { opacity: 0, pointerEvents: "none", userSelect: "none" },
             })}
           >
             {(() => {
               if (!connected)
-                return <ConnectWalletButton onClick={openConnectModal} />;
+                return (
+                  <ConnectWalletButton onClick={openConnectModal} block={block} />
+                );
               if (chain.unsupported)
-                return <WrongNetworkButton onClick={openChainModal} />;
+                return <WrongNetworkButton onClick={openChainModal} block={block} />;
               return (
-                <div className="flex items-center gap-2">
-                  <button
-                    onClick={openChainModal}
-                    type="button"
-                    className="flex items-center gap-1.5 text-sm font-medium px-3 min-h-[44px] rounded-md border transition-colors cursor-pointer"
-                    style={{
-                      background: "var(--surface)",
-                      borderColor: "var(--border)",
-                      color: "var(--text)",
-                    }}
+                <button
+                  onClick={openAccountModal}
+                  type="button"
+                  aria-label="Open account"
+                  className={`tap btn-ghost flex items-center gap-2 h-11 px-3 rounded-2xl text-sm font-medium cursor-pointer ${
+                    block ? "w-full justify-center" : ""
+                  }`}
+                >
+                  <span
+                    className="flex items-center justify-center w-6 h-6 rounded-full flex-shrink-0"
+                    style={{ background: "var(--red-bg)" }}
                   >
-                    {chain.hasIcon && (
-                      <div
-                        style={{
-                          background: chain.iconBackground,
-                          width: 14,
-                          height: 14,
-                          borderRadius: 999,
-                          overflow: "hidden",
-                          flexShrink: 0,
-                        }}
-                      >
-                        {chain.iconUrl && (
-                          <img
-                            alt={chain.name ?? "Chain icon"}
-                            src={chain.iconUrl}
-                            style={{ width: 14, height: 14 }}
-                          />
-                        )}
-                      </div>
-                    )}
-                    {chain.name}
-                  </button>
-
-                  <button
-                    onClick={openAccountModal}
-                    type="button"
-                    className="text-sm font-medium px-3 min-h-[44px] rounded-md border transition-colors cursor-pointer"
-                    style={{
-                      background: "var(--surface)",
-                      borderColor: "var(--border)",
-                      color: "var(--text)",
-                    }}
-                  >
+                    <Wallet className="w-3.5 h-3.5" style={{ color: "var(--red)" }} />
+                  </span>
+                  <span className="truncate" style={{ color: "var(--text)" }}>
                     {account.displayName}
-                    {account.displayBalance
-                      ? ` (${account.displayBalance})`
-                      : ""}
-                  </button>
-                </div>
+                  </span>
+                  {account.displayBalance && (
+                    <span
+                      className="mono text-xs hidden sm:inline"
+                      style={{ color: "var(--text-3)" }}
+                    >
+                      {account.displayBalance}
+                    </span>
+                  )}
+                </button>
               );
             })()}
           </div>

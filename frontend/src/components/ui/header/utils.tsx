@@ -1,23 +1,46 @@
-export function ConnectWalletButton({ onClick }: { onClick: () => void }) {
+import { AlertTriangle } from "lucide-react";
+
+export function ConnectWalletButton({
+  onClick,
+  block = false,
+}: {
+  onClick: () => void;
+  block?: boolean;
+}) {
   return (
     <button
       type="button"
       onClick={onClick}
-      className="btn-red cursor-pointer text-sm font-medium px-4 min-h-[44px] rounded-md"
+      className={`tap btn-red cursor-pointer text-sm font-semibold px-4 h-11 rounded-2xl ${
+        block ? "w-full" : ""
+      }`}
     >
       Connect Wallet
     </button>
   );
 }
 
-export function WrongNetworkButton({ onClick }: { onClick: () => void }) {
+export function WrongNetworkButton({
+  onClick,
+  block = false,
+}: {
+  onClick: () => void;
+  block?: boolean;
+}) {
   return (
     <button
       type="button"
       onClick={onClick}
-      className="cursor-pointer text-sm font-medium px-4 min-h-[44px] rounded-md"
-      style={{ background: "var(--red-bg)", color: "var(--error)", border: "1px solid var(--red-border)" }}
+      className={`tap cursor-pointer flex items-center justify-center gap-1.5 text-sm font-semibold px-4 h-11 rounded-2xl ${
+        block ? "w-full" : ""
+      }`}
+      style={{
+        background: "var(--error-bg)",
+        color: "var(--error)",
+        border: "1px solid var(--error-border)",
+      }}
     >
+      <AlertTriangle className="w-4 h-4" />
       Wrong network
     </button>
   );

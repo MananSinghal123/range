@@ -57,18 +57,18 @@ function VaultPageContent() {
   );
 
   return (
-    <div className="min-h-dvh bg-white">
+    <div className="min-h-dvh">
       <Header />
 
-      <main className="max-w-5xl mx-auto px-5 py-8 space-y-6">
-        <div>
+      <main className="max-w-5xl mx-auto px-4 sm:px-5 py-6 sm:py-8 space-y-5 sm:space-y-6">
+        <div className="animate-in">
           <h1
-            className="text-2xl font-semibold tracking-tight"
+            className="text-[26px] sm:text-3xl font-bold tracking-tight"
             style={{ color: "var(--text)" }}
           >
             {sym0} / {sym1} Vault
           </h1>
-          <p className="mt-1 text-sm" style={{ color: "var(--text-2)" }}>
+          <p className="mt-1.5 text-sm sm:text-[15px]" style={{ color: "var(--text-2)" }}>
             Deposit tokens and earn trading fees automatically.
           </p>
         </div>
