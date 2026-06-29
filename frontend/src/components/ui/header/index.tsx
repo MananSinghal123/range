@@ -157,10 +157,12 @@ function MobileDrawer({ onClose }: { onClose: () => void }) {
       >
         {/* Sheet header */}
         <div
-          className="flex items-center justify-between h-16 px-4 flex-shrink-0"
+          className="flex items-center justify-between h-16 px-5 flex-shrink-0"
           style={{ borderBottom: "1px solid var(--border)" }}
         >
-          <Logo />
+          <span className="font-bold text-base tracking-tight" style={{ color: "var(--text)" }}>
+            Menu
+          </span>
           <button
             type="button"
             onClick={onClose}
