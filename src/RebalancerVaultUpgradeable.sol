@@ -121,7 +121,6 @@ contract RebalancerVaultUpgradeable is
     error DeviationOutOfRange();
     error SlippageTooHigh();
 
-
     /// @notice Parameters consumed once by {initialize}. Field order is ABI-stable
     ///         (factory encodes against this struct — do not reorder).
     struct InitParams {
@@ -137,7 +136,6 @@ contract RebalancerVaultUpgradeable is
         string name;
         string symbol;
     }
-
 
     modifier onlyOwner() {
         if (msg.sender != _s().owner) revert NotOwner();
@@ -387,7 +385,7 @@ contract RebalancerVaultUpgradeable is
         _requireSpotNearTwap();
 
         VaultStorageLib.VaultStorage storage s = _s();
-        s.lastDepositBlock[msg.sender] = block.number;
+        s.lastDepositBlock[receiver] = block.number;
 
         uint256 totalValBefore = _totalVaultValueInToken0();
         uint256 supply = totalSupply();
@@ -424,7 +422,7 @@ contract RebalancerVaultUpgradeable is
         _requireSpotNearTwap();
 
         VaultStorageLib.VaultStorage storage s = _s();
-        s.lastDepositBlock[msg.sender] = block.number;
+        s.lastDepositBlock[receiver] = block.number;
 
         uint256 supply = totalSupply();
         uint256 ta = totalAssets();
@@ -462,7 +460,34 @@ contract RebalancerVaultUpgradeable is
 
         uint256 supply = totalSupply();
         (uint256 min0, uint256 min1) = _computeRemoveSlippage(shares, supply);
-        _removeProportionalLiquidity(shares, supply, min0, min1);
+
+        uint256 idleBefore0 = IERC20(s.token0).balanceOf(address(this));
+        uint256 idleBefore1 = IERC20(s.token1).balanceOf(address(this));
+
+        (uint256 p0, uint256 p1) = _removeProportionalLiquidity(
+            shares,
+            supply,
+            min0,
+            min1
+        );
+
+        // _removeProportionalLiquidity collects the position's ENTIRE accrued
+        // fees (amount0Max/amount1Max == type(uint128).max). Charge the
+        // performance fee on that fee portion (swept - principal), exactly as
+        // collectFees()/rebalance() do; the tokens are already in the vault.
+        uint256 swept0 = IERC20(s.token0).balanceOf(address(this)) -
+            idleBefore0;
+        uint256 swept1 = IERC20(s.token1).balanceOf(address(this)) -
+            idleBefore1;
+        (uint256 fee0, uint256 fee1) = _deductPerformanceFee(
+            swept0 - p0,
+            swept1 - p1
+        );
+        s.totalFees0Earned += fee0;
+        s.totalFees1Earned += fee1;
+        if (fee0 > 0 || fee1 > 0)
+            emit FeesCollected(fee0, fee1, s.feeRecipient);
+
         _burn(owner_, shares);
 
         uint256 idle0 = IERC20(s.token0).balanceOf(address(this));
@@ -514,13 +539,39 @@ contract RebalancerVaultUpgradeable is
         uint256 idleBefore1 = IERC20(s.token1).balanceOf(address(this));
 
         (uint256 min0, uint256 min1) = _computeRemoveSlippage(shares, supply);
-        _removeProportionalLiquidity(shares, supply, min0, min1);
+        // _removeProportionalLiquidity collects the position's ENTIRE accrued
+        // fees (amount0Max/amount1Max == type(uint128).max), not just this
+        // redeemer's share. Separate the proportional principal (p0/p1) from the
+        // swept fees so the redeemer is credited only their pro-rata fee share;
+        // the remaining fees stay idle and accrue to all holders.
+        (uint256 p0, uint256 p1) = _removeProportionalLiquidity(
+            shares,
+            supply,
+            min0,
+            min1
+        );
 
-        uint256 freed0 = IERC20(s.token0).balanceOf(address(this)) -
+        uint256 swept0 = IERC20(s.token0).balanceOf(address(this)) -
             idleBefore0;
-        uint256 freed1 = IERC20(s.token1).balanceOf(address(this)) -
+        uint256 swept1 = IERC20(s.token1).balanceOf(address(this)) -
             idleBefore1;
 
+        (uint256 fee0, uint256 fee1) = _deductPerformanceFee(
+            swept0 - p0,
+            swept1 - p1
+        );
+        s.totalFees0Earned += fee0;
+        s.totalFees1Earned += fee1;
+        swept0 -= fee0;
+        swept1 -= fee1;
+
+        //specific user share of principal+fees from position, rounded down to avoid over-crediting
+        uint256 freed0 = p0 +
+            Math.mulDiv(swept0 - p0, shares, supply, Math.Rounding.Floor);
+        uint256 freed1 = p1 +
+            Math.mulDiv(swept1 - p1, shares, supply, Math.Rounding.Floor);
+
+        //specific user share of principal from vault, rounded down to avoid over-crediting
         uint256 idleShare0 = Math.mulDiv(
             idleBefore0,
             shares,
@@ -789,15 +840,6 @@ contract RebalancerVaultUpgradeable is
         uint128 feesOwed0 = tokensOwed0 - uint128(principal0);
         uint128 feesOwed1 = tokensOwed1 - uint128(principal1);
 
-        (uint256 fee0, uint256 fee1) = _deductPerformanceFee(
-            uint256(feesOwed0),
-            uint256(feesOwed1)
-        );
-        s.totalFees0Earned += fee0;
-        s.totalFees1Earned += fee1;
-        if (fee0 > 0 || fee1 > 0)
-            emit FeesCollected(fee0, fee1, s.feeRecipient);
-
         _collect(
             IDexAdapter.CollectArgs({
                 positionManager: s.positionManager,
@@ -807,6 +849,15 @@ contract RebalancerVaultUpgradeable is
                 amount1Max: tokensOwed1
             })
         );
+
+        (uint256 fee0, uint256 fee1) = _deductPerformanceFee(
+            uint256(feesOwed0),
+            uint256(feesOwed1)
+        );
+        s.totalFees0Earned += fee0;
+        s.totalFees1Earned += fee1;
+        if (fee0 > 0 || fee1 > 0)
+            emit FeesCollected(fee0, fee1, s.feeRecipient);
 
         _burnPosition(oldTokenId);
     }
@@ -1063,23 +1114,25 @@ contract RebalancerVaultUpgradeable is
 
     // ─── Private: liquidity removal ──────────────────────────────────────────────
 
+    /// @return principal0 token0 principal returned by decreaseLiquidity (excludes fees)
+    /// @return principal1 token1 principal returned by decreaseLiquidity (excludes fees)
     function _removeProportionalLiquidity(
         uint256 shares,
         uint256 supply,
         uint256 min0,
         uint256 min1
-    ) private {
+    ) private returns (uint256 principal0, uint256 principal1) {
         VaultStorageLib.VaultStorage storage s = _s();
-        if (s.tokenId == 0) return;
+        if (s.tokenId == 0) return (0, 0);
         (, , uint128 liq, , , , ) = _adapterPositions(s.tokenId);
-        if (liq == 0) return;
+        if (liq == 0) return (0, 0);
 
         uint128 toRemove = uint128(
             Math.mulDiv(uint256(liq), shares, supply, Math.Rounding.Ceil)
         );
-        if (toRemove == 0) return;
+        if (toRemove == 0) return (0, 0);
 
-        _decreaseLiquidity(
+        (principal0, principal1) = _decreaseLiquidity(
             IDexAdapter.DecreaseArgs({
                 positionManager: s.positionManager,
                 tokenId: s.tokenId,

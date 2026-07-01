@@ -67,19 +67,43 @@ contract Deploy is Script {
         bool shouldSeed = deployerIsOwner && seedAssets > 0;
 
         address vaultTight = _deployVault(
-            factory, pool, address(stratTight), owner, deployer,
-            operator, feeRecipient, "Mezo MUSD/BTC Tight", "mMUSD-BTC-T",
-            shouldSeed, seedAssets
+            factory,
+            pool,
+            address(stratTight),
+            owner,
+            deployer,
+            operator,
+            feeRecipient,
+            "Mezo MUSD/BTC Tight",
+            "mMUSD-BTC-T",
+            shouldSeed,
+            seedAssets
         );
         address vaultMedium = _deployVault(
-            factory, pool, address(stratMedium), owner, deployer,
-            operator, feeRecipient, "Mezo MUSD/BTC Medium", "mMUSD-BTC-M",
-            shouldSeed, seedAssets
+            factory,
+            pool,
+            address(stratMedium),
+            owner,
+            deployer,
+            operator,
+            feeRecipient,
+            "Mezo MUSD/BTC Medium",
+            "mMUSD-BTC-M",
+            shouldSeed,
+            seedAssets
         );
         address vaultWide = _deployVault(
-            factory, pool, address(stratWide), owner, deployer,
-            operator, feeRecipient, "Mezo MUSD/BTC Wide", "mMUSD-BTC-W",
-            shouldSeed, seedAssets
+            factory,
+            pool,
+            address(stratWide),
+            owner,
+            deployer,
+            operator,
+            feeRecipient,
+            "Mezo MUSD/BTC Wide",
+            "mMUSD-BTC-W",
+            shouldSeed,
+            seedAssets
         );
 
         vm.stopBroadcast();
@@ -115,8 +139,18 @@ contract Deploy is Script {
     ) internal returns (address vault) {
         if (shouldSeed) {
             // Deploy with deployer as temporary owner so we can call admin fns.
-            vault = factory.deployVault(pool, strategy, deployer, operator, feeRecipient, name, symbol);
-            RebalancerVaultUpgradeable v = RebalancerVaultUpgradeable(payable(vault));
+            vault = factory.deployVault(
+                pool,
+                strategy,
+                deployer,
+                operator,
+                feeRecipient,
+                name,
+                symbol
+            );
+            RebalancerVaultUpgradeable v = RebalancerVaultUpgradeable(
+                payable(vault)
+            );
             address token0 = address(v.token0());
 
             // Lower TWAP window for fresh testnet pools that lack 300s of history.
@@ -127,13 +161,16 @@ contract Deploy is Script {
 
             (, int24 currentTick, , , , ) = ICLPool(pool).slot0();
             int24 tickSpacing = ICLPool(pool).tickSpacing();
-            (int24 tickLower, int24 tickUpper) = IStrategy(strategy).computeRange(currentTick, tickSpacing);
+            (int24 tickLower, int24 tickUpper) = IStrategy(strategy)
+                .computeRange(currentTick, tickSpacing);
 
             v.initializePosition(
-                tickLower, tickUpper,
+                tickLower,
+                tickUpper,
                 IERC20(token0).balanceOf(vault),
                 IERC20(address(v.token1())).balanceOf(vault),
-                0, 0
+                0,
+                0
             );
 
             // Restore production TWAP window and transfer ownership to final owner.
@@ -142,7 +179,15 @@ contract Deploy is Script {
 
             console2.log(string.concat(name, " (seeded):"), vault);
         } else {
-            vault = factory.deployVault(pool, strategy, vaultOwner, operator, feeRecipient, name, symbol);
+            vault = factory.deployVault(
+                pool,
+                strategy,
+                vaultOwner,
+                operator,
+                feeRecipient,
+                name,
+                symbol
+            );
             console2.log(string.concat(name, ":"), vault);
         }
     }

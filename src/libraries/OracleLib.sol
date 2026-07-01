@@ -20,13 +20,6 @@ library OracleLib {
 
         int56 delta = tickCumulatives[1] - tickCumulatives[0];
         twapTick = int24(delta / int56(uint56(twapSeconds)));
-
-        int24 negTwap = -twapTick;
-        int256 d1 = int256(twapTick) - int256(spotTick);
-        int256 d2 = int256(negTwap) - int256(spotTick);
-        if (d1 < 0) d1 = -d1;
-        if (d2 < 0) d2 = -d2;
-        if (d2 < d1) twapTick = negTwap;
     }
 
     function getTwapTick(

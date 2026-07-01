@@ -27,9 +27,9 @@ library VaultMath {
         uint256 sqrtPrice = uint256(sqrtPriceX96);
         return
             Math.mulDiv(
-                amount1,
-                uint256(1) << 192,
-                Math.mulDiv(sqrtPrice, sqrtPrice, 1)
+                Math.mulDiv(amount1, 1 << 96, sqrtPrice),
+                1 << 96,
+                sqrtPrice
             );
     }
 
@@ -61,8 +61,16 @@ library VaultMath {
         // regardless of the token prices (e.g. 1 BTC ≈ tens of thousands of MUSD) and
         // never degenerates to "swap everything" when one balance is zero.
         uint128 lRef = 1e18; // reference liquidity; cancels out, used only for the ratio
-        uint256 need0 = LiquidityAmounts.getAmount0ForLiquidity(sqrtP, sqrtB, lRef);
-        uint256 need1 = LiquidityAmounts.getAmount1ForLiquidity(sqrtA, sqrtP, lRef);
+        uint256 need0 = LiquidityAmounts.getAmount0ForLiquidity(
+            sqrtP,
+            sqrtB,
+            lRef
+        );
+        uint256 need1 = LiquidityAmounts.getAmount1ForLiquidity(
+            sqrtA,
+            sqrtP,
+            lRef
+        );
 
         uint256 need0InT1 = token0ToToken1(need0, sqrtP); // token0 leg valued in token1
         uint256 targetDen = need0InT1 + need1; // total target value (token1 units)
