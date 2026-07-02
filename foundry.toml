@@ -36,9 +36,4 @@ runs           = 1000  # high run count for thorough state-space exploration
 depth          = 1000  # long call sequences to find deep invariant violations
 fail_on_revert = true  # target state: no handler function should revert
 
-# >>> fizz fuzz profile
-[profile.fuzz]
-via_ir = true
-optimizer = false
-optimizer_runs = 0
-# <<< fizz fuzz profile
+

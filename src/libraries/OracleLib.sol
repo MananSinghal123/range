@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.13;
 
-import "@uniswap/v3-core/contracts/libraries/TickMath.sol";
 import {ICLPool} from "../interfaces/pool/ICLPool.sol";
+import {TickMath} from "./UniswapV3Math.sol";
 
 library OracleLib {
     error PriceDeviatedFromTwap();
