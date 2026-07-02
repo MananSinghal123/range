@@ -101,10 +101,12 @@ abstract contract BaseTest is Test {
 
         vm.store(PM_ADDR, bytes32(0), bytes32(uint256(1)));
         MockPositionManager(PM_ADDR).setMintReturn(1e18, 0, 0);
-        token0.mint(PM_ADDR, 1_000_000e18); // MUSD
-        token1.mint(PM_ADDR, 100_000e8); // BTC (large reserve for liquidity returns)
-        token0.mint(ROUTER_ADDR, 1_000_000e18);
-        token1.mint(ROUTER_ADDR, 100_000e8);
+        // The mock PM releases amount0 = amount1 = liquidity (1e18-scale) on
+        // decreaseLiquidity, so both mock "banks" need reserves well above that.
+        token0.mint(PM_ADDR, 1e30);
+        token1.mint(PM_ADDR, 1e30);
+        token0.mint(ROUTER_ADDR, 1e30);
+        token1.mint(ROUTER_ADDR, 1e30);
 
         _fundActors();
         _approveAll();

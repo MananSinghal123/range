@@ -49,9 +49,12 @@ contract VaultMathTest is Test {
     VaultMathHarness h;
 
     // Tick range straddling the price so both legs of liquidity math are non-trivial.
-    uint160 constant SQRTP = 2_505_414_483_750_479_251_915_866_636; // ~tick 345_397
-    int24 constant LO = 345_200;
-    int24 constant HI = 345_600;
+    // Matches BaseTest's BTC(8dec)/MUSD(18dec) @ 100k price (tick ≈ -345_397); LO/HI
+    // must stay consistent with SQRTP's sign/magnitude or LiquidityAmounts (fed
+    // sqrtLower/sqrtUpper computed from a mismatched tick) silently overflows.
+    uint160 constant SQRTP = 2_506_420_941_470_528_471_776; // tick ≈ -345_397
+    int24 constant LO = -345_600;
+    int24 constant HI = -345_200;
 
     function setUp() public {
         h = new VaultMathHarness();
@@ -79,7 +82,9 @@ contract VaultMathTest is Test {
         h.token1ToToken0(1e18, 0);
     }
     function test_token0ToToken1_nonZero() public pure {
-        assertGt(VaultMath.token0ToToken1(1e8, SQRTP), 0);
+        // 1e8 token0-wei (1e-10 MUSD) floors to 0 at this ~1e-15 price; use a
+        // realistic 1 MUSD so the conversion clears the rounding floor.
+        assertGt(VaultMath.token0ToToken1(1e18, SQRTP), 0);
     }
 
     /// @dev computeOptimalSwap: when price is below the range, all token1 is swapped to token0.

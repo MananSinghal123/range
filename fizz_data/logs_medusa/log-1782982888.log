@@ -1,0 +1,165 @@
+⇾ Compiling targets with crytic-compile
+⇾ Running command:
+/home/manan/.local/bin/crytic-compile . --export-format solc --export-dir fizz_data/crytic-export --foundry-compile-all
+⇾ Finished compiling targets in 25s
+⇾ artifacts: Medusa is running against a new set of build artifacts
+⇾ No Slither cached results found at fizz_data/slither_results.json
+⇾ Running Slither:
+slither . --ignore-compile --print echidna --json -
+warn Failed to run slither
+‣ exec: "slither": executable file not found in $PATH
+⇾ Running with a timeout of 300 seconds
+⇾ Setting up test chain
+⇾ Finished setting up test chain
+⇾ Creating corpus...
+⇾ Fuzzing with 10 workers
+⇾ [NOT STARTED] Assertion Test: FuzzTester.rebalancerVaultUpgradeable_redeem_full(address,address)
+⇾ [NOT STARTED] Assertion Test: FuzzTester.rebalancerVaultUpgradeable_withdraw_full(address,address)
+⇾ [NOT STARTED] Assertion Test: FuzzTester.rebalancerVaultUpgradeable_deposit(uint256,address)
+⇾ [NOT STARTED] Assertion Test: FuzzTester.rebalancerVaultUpgradeable_depositToken1(uint256,address)
+⇾ [NOT STARTED] Assertion Test: FuzzTester.rebalancerVaultUpgradeable_depositToken1_clamped(uint256,address)
+⇾ [NOT STARTED] Assertion Test: FuzzTester.rebalancerVaultUpgradeable_deposit_smallAmount(uint256,address)
+⇾ [NOT STARTED] Assertion Test: FuzzTester.rebalancerVaultUpgradeable_withdraw_clamped(uint256,address,address)
+⇾ [NOT STARTED] Assertion Test: FuzzTester.rebalancerVaultUpgradeable_collectFees(uint256,uint256)
+⇾ [NOT STARTED] Assertion Test: FuzzTester.rebalancerVaultUpgradeable_collectFees_clamped(uint256,uint256)
+⇾ [NOT STARTED] Assertion Test: FuzzTester.rebalancerVaultUpgradeable_donateETH(uint256)
+⇾ [NOT STARTED] Assertion Test: FuzzTester.rebalancerVaultUpgradeable_donateToken1(uint256)
+⇾ [NOT STARTED] Assertion Test: FuzzTester.rebalancerVaultUpgradeable_mint_clamped(uint256,address)
+⇾ [NOT STARTED] Assertion Test: FuzzTester.rebalancerVaultUpgradeable_redeem(uint256,address,address)
+⇾ [NOT STARTED] Assertion Test: FuzzTester.rebalancerVaultUpgradeable_withdraw(uint256,address,address)
+⇾ [NOT STARTED] Assertion Test: FuzzTester.setCurrentActor(uint256)
+⇾ [NOT STARTED] Assertion Test: FuzzTester.rebalancerVaultUpgradeable_mint(uint256,address)
+⇾ fuzz: elapsed:       0s, calls:          0 (     0/sec), seq/s:      0, branches:   5547, corpus:     0, failures: 0/0, gas/s:            0
+⇾ [NOT STARTED] Assertion Test: FuzzTester.rebalancerVaultUpgradeable_rebalance(bool,uint256)
+⇾ [NOT STARTED] Assertion Test: FuzzTester.rebalancerVaultUpgradeable_rebalance_clamped(bool,uint256)
+⇾ [NOT STARTED] Assertion Test: FuzzTester.rebalancerVaultUpgradeable_redeem_clamped(uint256,address,address)
+⇾ [NOT STARTED] Assertion Test: FuzzTester.rebalancerVaultUpgradeable_secondary(uint8,uint256,address)
+⇾ [NOT STARTED] Assertion Test: FuzzTester.rebalancerVaultUpgradeable_accrueFees(uint256,uint256)
+⇾ [NOT STARTED] Assertion Test: FuzzTester.rebalancerVaultUpgradeable_deposit_clamped(uint256,address)
+⇾ [NOT STARTED] Assertion Test: FuzzTester.rebalancerVaultUpgradeable_donateToken0(uint256)
+⇾ fuzz: elapsed:       3s, calls:       4496 (  1497/sec), seq/s:     13, branches:  11955, corpus:    89, failures: 0/40, gas/s:    355247845
+⇾ fuzz: elapsed:       6s, calls:       9315 (  1606/sec), seq/s:     15, branches:  12017, corpus:    92, failures: 0/88, gas/s:    383419048
+⇾ fuzz: elapsed:       9s, calls:      14581 (  1754/sec), seq/s:     17, branches:  12027, corpus:    94, failures: 0/140, gas/s:    408651318
+⇾ fuzz: elapsed:      12s, calls:      19317 (  1578/sec), seq/s:     15, branches:  12041, corpus:    97, failures: 0/188, gas/s:    395395056
+⇾ fuzz: elapsed:      15s, calls:      24044 (  1575/sec), seq/s:     16, branches:  12074, corpus:    99, failures: 0/238, gas/s:    382226461
+⇾ fuzz: elapsed:      18s, calls:      29194 (  1715/sec), seq/s:     15, branches:  12107, corpus:   101, failures: 0/286, gas/s:    410990789
+⇾ fuzz: elapsed:      21s, calls:      34344 (  1716/sec), seq/s:     16, branches:  12156, corpus:   103, failures: 0/337, gas/s:    403276266
+⇾ fuzz: elapsed:      24s, calls:      39888 (  1847/sec), seq/s:     19, branches:  12156, corpus:   103, failures: 0/395, gas/s:    411547675
+⇾ fuzz: elapsed:      27s, calls:      44787 (  1632/sec), seq/s:     15, branches:  12214, corpus:   105, failures: 0/443, gas/s:    401096554
+⇾ fuzz: elapsed:      30s, calls:      50202 (  1804/sec), seq/s:     17, branches:  12214, corpus:   105, failures: 0/496, gas/s:    398729127
+⇾ fuzz: elapsed:      33s, calls:      55200 (  1661/sec), seq/s:     16, branches:  12220, corpus:   106, failures: 0/546, gas/s:    384580226
+⇾ fuzz: elapsed:      36s, calls:      60606 (  1796/sec), seq/s:     17, branches:  12220, corpus:   106, failures: 0/600, gas/s:    410729311
+⇾ fuzz: elapsed:      39s, calls:      65823 (  1738/sec), seq/s:     17, branches:  12220, corpus:   106, failures: 0/652, gas/s:    401417612
+⇾ fuzz: elapsed:      42s, calls:      70816 (  1664/sec), seq/s:     16, branches:  12220, corpus:   106, failures: 0/702, gas/s:    386908610
+⇾ fuzz: elapsed:      45s, calls:      75601 (  1594/sec), seq/s:     16, branches:  12654, corpus:   108, failures: 0/751, gas/s:    375498023
+⇾ fuzz: elapsed:      48s, calls:      80909 (  1768/sec), seq/s:     17, branches:  12654, corpus:   108, failures: 0/805, gas/s:    393060911
+⇾ fuzz: elapsed:      51s, calls:      85574 (  1554/sec), seq/s:     14, branches:  12654, corpus:   108, failures: 0/850, gas/s:    379920009
+⇾ fuzz: elapsed:      54s, calls:      91432 (  1951/sec), seq/s:     19, branches:  12654, corpus:   108, failures: 0/909, gas/s:    409059186
+⇾ fuzz: elapsed:      57s, calls:      95939 (  1502/sec), seq/s:     14, branches:  12654, corpus:   108, failures: 0/954, gas/s:    346830904
+⇾ fuzz: elapsed:    1m00s, calls:     100340 (  1466/sec), seq/s:     14, branches:  12654, corpus:   108, failures: 0/998, gas/s:    352606599
+⇾ fuzz: elapsed:    1m03s, calls:     104928 (  1529/sec), seq/s:     15, branches:  12660, corpus:   109, failures: 0/1046, gas/s:    361886170
+⇾ fuzz: elapsed:    1m06s, calls:     110202 (  1757/sec), seq/s:     17, branches:  12660, corpus:   109, failures: 0/1098, gas/s:    403495890
+⇾ fuzz: elapsed:    1m09s, calls:     115284 (  1683/sec), seq/s:     16, branches:  12660, corpus:   109, failures: 0/1148, gas/s:    400557135
+⇾ fuzz: elapsed:    1m12s, calls:     120076 (  1596/sec), seq/s:     16, branches:  12660, corpus:   109, failures: 0/1197, gas/s:    389994465
+⇾ fuzz: elapsed:    1m15s, calls:     124340 (  1421/sec), seq/s:     13, branches:  12660, corpus:   109, failures: 0/1237, gas/s:    346352993
+⇾ fuzz: elapsed:    1m18s, calls:     129218 (  1625/sec), seq/s:     16, branches:  12660, corpus:   109, failures: 0/1287, gas/s:    396675997
+⇾ fuzz: elapsed:    1m21s, calls:     134402 (  1727/sec), seq/s:     17, branches:  12660, corpus:   109, failures: 0/1339, gas/s:    408024952
+⇾ fuzz: elapsed:    1m24s, calls:     139309 (  1635/sec), seq/s:     16, branches:  12660, corpus:   109, failures: 0/1389, gas/s:    382709250
+⇾ fuzz: elapsed:    1m27s, calls:     144447 (  1711/sec), seq/s:     16, branches:  12660, corpus:   109, failures: 0/1440, gas/s:    398147417
+⇾ fuzz: elapsed:    1m30s, calls:     149754 (  1762/sec), seq/s:     17, branches:  12660, corpus:   109, failures: 0/1492, gas/s:    403964009
+⇾ fuzz: elapsed:    1m33s, calls:     154107 (  1450/sec), seq/s:     14, branches:  12660, corpus:   109, failures: 0/1535, gas/s:    367917366
+⇾ fuzz: elapsed:    1m36s, calls:     158139 (  1343/sec), seq/s:     13, branches:  12660, corpus:   109, failures: 0/1575, gas/s:    304912501
+⇾ fuzz: elapsed:    1m39s, calls:     162128 (  1329/sec), seq/s:     13, branches:  12660, corpus:   109, failures: 0/1615, gas/s:    315610164
+⇾ fuzz: elapsed:    1m42s, calls:     166204 (  1358/sec), seq/s:     14, branches:  12660, corpus:   109, failures: 0/1658, gas/s:    324017848
+⇾ fuzz: elapsed:    1m45s, calls:     170415 (  1403/sec), seq/s:     13, branches:  12660, corpus:   109, failures: 0/1700, gas/s:    335495973
+⇾ fuzz: elapsed:    1m48s, calls:     174675 (  1419/sec), seq/s:     13, branches:  12660, corpus:   109, failures: 0/1742, gas/s:    327416385
+⇾ fuzz: elapsed:    1m51s, calls:     178943 (  1422/sec), seq/s:     14, branches:  12660, corpus:   109, failures: 0/1785, gas/s:    336911254
+⇾ fuzz: elapsed:    1m54s, calls:     183237 (  1430/sec), seq/s:     14, branches:  12660, corpus:   109, failures: 0/1828, gas/s:    331472076
+⇾ fuzz: elapsed:    1m57s, calls:     188102 (  1615/sec), seq/s:     16, branches:  12660, corpus:   109, failures: 0/1878, gas/s:    360125377
+⇾ fuzz: elapsed:    2m00s, calls:     192461 (  1452/sec), seq/s:     13, branches:  12660, corpus:   109, failures: 0/1920, gas/s:    347823444
+⇾ fuzz: elapsed:    2m03s, calls:     196920 (  1486/sec), seq/s:     14, branches:  12660, corpus:   109, failures: 0/1964, gas/s:    344271768
+⇾ fuzz: elapsed:    2m06s, calls:     201075 (  1384/sec), seq/s:     14, branches:  12660, corpus:   109, failures: 0/2007, gas/s:    339010132
+⇾ fuzz: elapsed:    2m09s, calls:     204965 (  1295/sec), seq/s:     12, branches:  12660, corpus:   109, failures: 0/2046, gas/s:    308289429
+⇾ fuzz: elapsed:    2m12s, calls:     208744 (  1259/sec), seq/s:     11, branches:  12660, corpus:   109, failures: 0/2082, gas/s:    312864596
+⇾ fuzz: elapsed:    2m15s, calls:     212526 (  1260/sec), seq/s:     12, branches:  12660, corpus:   109, failures: 0/2121, gas/s:    313026075
+⇾ fuzz: elapsed:    2m18s, calls:     216570 (  1347/sec), seq/s:     13, branches:  12660, corpus:   109, failures: 0/2162, gas/s:    314333795
+⇾ fuzz: elapsed:    2m21s, calls:     220215 (  1214/sec), seq/s:     11, branches:  12660, corpus:   109, failures: 0/2198, gas/s:    288565236
+⇾ fuzz: elapsed:    2m24s, calls:     223480 (  1088/sec), seq/s:     10, branches:  12660, corpus:   109, failures: 0/2230, gas/s:    266037850
+⇾ fuzz: elapsed:    2m27s, calls:     227184 (  1234/sec), seq/s:     12, branches:  12666, corpus:   110, failures: 0/2267, gas/s:    284161650
+⇾ fuzz: elapsed:    2m30s, calls:     230941 (  1251/sec), seq/s:     12, branches:  12666, corpus:   110, failures: 0/2305, gas/s:    294172578
+⇾ fuzz: elapsed:    2m33s, calls:     234585 (  1214/sec), seq/s:     12, branches:  12666, corpus:   110, failures: 0/2342, gas/s:    282760970
+⇾ fuzz: elapsed:    2m36s, calls:     239161 (  1525/sec), seq/s:     14, branches:  12666, corpus:   110, failures: 0/2387, gas/s:    330936183
+⇾ fuzz: elapsed:    2m39s, calls:     243458 (  1423/sec), seq/s:     14, branches:  12666, corpus:   110, failures: 0/2430, gas/s:    318701032
+⇾ fuzz: elapsed:    2m42s, calls:     247318 (  1286/sec), seq/s:     12, branches:  12666, corpus:   110, failures: 0/2468, gas/s:    301698322
+⇾ fuzz: elapsed:    2m45s, calls:     251376 (  1352/sec), seq/s:     13, branches:  12666, corpus:   110, failures: 0/2508, gas/s:    296138922
+⇾ fuzz: elapsed:    2m48s, calls:     255151 (  1258/sec), seq/s:     12, branches:  12666, corpus:   110, failures: 0/2546, gas/s:    275594200
+⇾ fuzz: elapsed:    2m51s, calls:     258923 (  1257/sec), seq/s:     12, branches:  12666, corpus:   110, failures: 0/2585, gas/s:    275277517
+⇾ fuzz: elapsed:    2m54s, calls:     263003 (  1359/sec), seq/s:     13, branches:  12666, corpus:   110, failures: 0/2625, gas/s:    304055204
+⇾ fuzz: elapsed:    2m57s, calls:     267348 (  1448/sec), seq/s:     14, branches:  12666, corpus:   110, failures: 0/2668, gas/s:    327886714
+⇾ fuzz: elapsed:    3m00s, calls:     271913 (  1521/sec), seq/s:     15, branches:  12666, corpus:   110, failures: 0/2714, gas/s:    341863140
+⇾ fuzz: elapsed:    3m03s, calls:     276964 (  1682/sec), seq/s:     16, branches:  12667, corpus:   111, failures: 0/2765, gas/s:    330338319
+⇾ fuzz: elapsed:    3m06s, calls:     280975 (  1336/sec), seq/s:     13, branches:  12669, corpus:   112, failures: 0/2805, gas/s:    313308653
+⇾ fuzz: elapsed:    3m09s, calls:     284818 (  1280/sec), seq/s:     12, branches:  12669, corpus:   112, failures: 0/2842, gas/s:    313746780
+⇾ fuzz: elapsed:    3m12s, calls:     288508 (  1222/sec), seq/s:     12, branches:  12669, corpus:   112, failures: 0/2880, gas/s:    290003178
+⇾ fuzz: elapsed:    3m15s, calls:     292543 (  1344/sec), seq/s:     13, branches:  12669, corpus:   112, failures: 0/2922, gas/s:    299610736
+⇾ fuzz: elapsed:    3m18s, calls:     296422 (  1292/sec), seq/s:     12, branches:  12669, corpus:   112, failures: 0/2959, gas/s:    313121499
+⇾ fuzz: elapsed:    3m21s, calls:     300437 (  1338/sec), seq/s:     13, branches:  12669, corpus:   112, failures: 0/2999, gas/s:    303871007
+⇾ fuzz: elapsed:    3m24s, calls:     304059 (  1206/sec), seq/s:     12, branches:  12669, corpus:   112, failures: 0/3036, gas/s:    261570082
+⇾ fuzz: elapsed:    3m28s, calls:     307930 (  1290/sec), seq/s:     12, branches:  12669, corpus:   112, failures: 0/3074, gas/s:    300840421
+⇾ fuzz: elapsed:    3m31s, calls:     311702 (  1257/sec), seq/s:     12, branches:  12669, corpus:   112, failures: 0/3112, gas/s:    298659092
+⇾ fuzz: elapsed:    3m34s, calls:     315763 (  1352/sec), seq/s:     12, branches:  12669, corpus:   112, failures: 0/3151, gas/s:    314692923
+⇾ fuzz: elapsed:    3m37s, calls:     319481 (  1239/sec), seq/s:     12, branches:  12669, corpus:   112, failures: 0/3189, gas/s:    268326458
+⇾ fuzz: elapsed:    3m40s, calls:     322799 (  1105/sec), seq/s:     11, branches:  12669, corpus:   112, failures: 0/3223, gas/s:    262644317
+⇾ fuzz: elapsed:    3m43s, calls:     326590 (  1257/sec), seq/s:     12, branches:  12669, corpus:   112, failures: 0/3260, gas/s:    308568797
+⇾ fuzz: elapsed:    3m46s, calls:     330457 (  1288/sec), seq/s:     13, branches:  12669, corpus:   112, failures: 0/3300, gas/s:    274243502
+⇾ fuzz: elapsed:    3m49s, calls:     334140 (  1227/sec), seq/s:     12, branches:  12669, corpus:   112, failures: 0/3337, gas/s:    295060981
+⇾ fuzz: elapsed:    3m52s, calls:     337842 (  1233/sec), seq/s:     12, branches:  12669, corpus:   112, failures: 0/3375, gas/s:    288333011
+⇾ fuzz: elapsed:    3m55s, calls:     341809 (  1321/sec), seq/s:     12, branches:  12669, corpus:   112, failures: 0/3413, gas/s:    299679720
+⇾ fuzz: elapsed:    3m58s, calls:     345919 (  1369/sec), seq/s:     13, branches:  12669, corpus:   112, failures: 0/3455, gas/s:    304793891
+⇾ fuzz: elapsed:    4m01s, calls:     350483 (  1520/sec), seq/s:     15, branches:  12669, corpus:   112, failures: 0/3501, gas/s:    330726869
+⇾ fuzz: elapsed:    4m04s, calls:     354106 (  1207/sec), seq/s:     11, branches:  12669, corpus:   112, failures: 0/3536, gas/s:    293548537
+⇾ fuzz: elapsed:    4m07s, calls:     357468 (  1120/sec), seq/s:     11, branches:  12669, corpus:   112, failures: 0/3571, gas/s:    256627164
+⇾ fuzz: elapsed:    4m10s, calls:     361182 (  1237/sec), seq/s:     11, branches:  12669, corpus:   112, failures: 0/3607, gas/s:    299475982
+⇾ fuzz: elapsed:    4m13s, calls:     364788 (  1201/sec), seq/s:     12, branches:  12669, corpus:   112, failures: 0/3645, gas/s:    285180066
+⇾ fuzz: elapsed:    4m16s, calls:     368337 (  1182/sec), seq/s:     10, branches:  12669, corpus:   112, failures: 0/3677, gas/s:    277861204
+⇾ fuzz: elapsed:    4m19s, calls:     372992 (  1551/sec), seq/s:     15, branches:  12669, corpus:   112, failures: 0/3725, gas/s:    326003309
+⇾ fuzz: elapsed:    4m22s, calls:     377069 (  1358/sec), seq/s:     13, branches:  12669, corpus:   112, failures: 0/3767, gas/s:    307807914
+⇾ fuzz: elapsed:    4m25s, calls:     381511 (  1480/sec), seq/s:     14, branches:  12669, corpus:   112, failures: 0/3811, gas/s:    323848220
+⇾ fuzz: elapsed:    4m28s, calls:     385745 (  1410/sec), seq/s:     13, branches:  12669, corpus:   112, failures: 0/3852, gas/s:    318851349
+⇾ fuzz: elapsed:    4m31s, calls:     389408 (  1220/sec), seq/s:     12, branches:  12669, corpus:   112, failures: 0/3889, gas/s:    307073079
+⇾ fuzz: elapsed:    4m34s, calls:     393573 (  1387/sec), seq/s:     13, branches:  12669, corpus:   112, failures: 0/3931, gas/s:    319333498
+⇾ fuzz: elapsed:    4m37s, calls:     397534 (  1319/sec), seq/s:     13, branches:  12669, corpus:   112, failures: 0/3971, gas/s:    316961508
+⇾ fuzz: elapsed:    4m40s, calls:     401684 (  1382/sec), seq/s:     13, branches:  12669, corpus:   112, failures: 0/4013, gas/s:    327550454
+⇾ fuzz: elapsed:    4m43s, calls:     405488 (  1266/sec), seq/s:     12, branches:  12669, corpus:   112, failures: 0/4050, gas/s:    298908180
+⇾ fuzz: elapsed:    4m46s, calls:     409668 (  1393/sec), seq/s:     13, branches:  12669, corpus:   112, failures: 0/4092, gas/s:    306311885
+⇾ fuzz: elapsed:    4m49s, calls:     413519 (  1282/sec), seq/s:     12, branches:  12669, corpus:   112, failures: 0/4131, gas/s:    279205798
+⇾ fuzz: elapsed:    4m52s, calls:     417239 (  1239/sec), seq/s:     11, branches:  12669, corpus:   112, failures: 0/4167, gas/s:    282241229
+⇾ fuzz: elapsed:    4m55s, calls:     420651 (  1136/sec), seq/s:     11, branches:  12669, corpus:   112, failures: 0/4201, gas/s:    261349087
+⇾ fuzz: elapsed:    4m58s, calls:     424722 (  1356/sec), seq/s:     14, branches:  12669, corpus:   112, failures: 0/4244, gas/s:    306855805
+⇾ Fuzzer stopped, test results follow below ...
+⇾ [1m[32m[PASSED] [0m[0m[1mAssertion Test: FuzzTester.rebalancerVaultUpgradeable_accrueFees(uint256,uint256)[0m
+⇾ [1m[32m[PASSED] [0m[0m[1mAssertion Test: FuzzTester.rebalancerVaultUpgradeable_collectFees(uint256,uint256)[0m
+⇾ [1m[32m[PASSED] [0m[0m[1mAssertion Test: FuzzTester.rebalancerVaultUpgradeable_collectFees_clamped(uint256,uint256)[0m
+⇾ [1m[32m[PASSED] [0m[0m[1mAssertion Test: FuzzTester.rebalancerVaultUpgradeable_deposit(uint256,address)[0m
+⇾ [1m[32m[PASSED] [0m[0m[1mAssertion Test: FuzzTester.rebalancerVaultUpgradeable_deposit_clamped(uint256,address)[0m
+⇾ [1m[32m[PASSED] [0m[0m[1mAssertion Test: FuzzTester.rebalancerVaultUpgradeable_deposit_smallAmount(uint256,address)[0m
+⇾ [1m[32m[PASSED] [0m[0m[1mAssertion Test: FuzzTester.rebalancerVaultUpgradeable_depositToken1(uint256,address)[0m
+⇾ [1m[32m[PASSED] [0m[0m[1mAssertion Test: FuzzTester.rebalancerVaultUpgradeable_depositToken1_clamped(uint256,address)[0m
+⇾ [1m[32m[PASSED] [0m[0m[1mAssertion Test: FuzzTester.rebalancerVaultUpgradeable_donateETH(uint256)[0m
+⇾ [1m[32m[PASSED] [0m[0m[1mAssertion Test: FuzzTester.rebalancerVaultUpgradeable_donateToken0(uint256)[0m
+⇾ [1m[32m[PASSED] [0m[0m[1mAssertion Test: FuzzTester.rebalancerVaultUpgradeable_donateToken1(uint256)[0m
+⇾ [1m[32m[PASSED] [0m[0m[1mAssertion Test: FuzzTester.rebalancerVaultUpgradeable_mint(uint256,address)[0m
+⇾ [1m[32m[PASSED] [0m[0m[1mAssertion Test: FuzzTester.rebalancerVaultUpgradeable_mint_clamped(uint256,address)[0m
+⇾ [1m[32m[PASSED] [0m[0m[1mAssertion Test: FuzzTester.rebalancerVaultUpgradeable_rebalance(bool,uint256)[0m
+⇾ [1m[32m[PASSED] [0m[0m[1mAssertion Test: FuzzTester.rebalancerVaultUpgradeable_rebalance_clamped(bool,uint256)[0m
+⇾ [1m[32m[PASSED] [0m[0m[1mAssertion Test: FuzzTester.rebalancerVaultUpgradeable_redeem(uint256,address,address)[0m
+⇾ [1m[32m[PASSED] [0m[0m[1mAssertion Test: FuzzTester.rebalancerVaultUpgradeable_redeem_clamped(uint256,address,address)[0m
+⇾ [1m[32m[PASSED] [0m[0m[1mAssertion Test: FuzzTester.rebalancerVaultUpgradeable_redeem_full(address,address)[0m
+⇾ [1m[32m[PASSED] [0m[0m[1mAssertion Test: FuzzTester.rebalancerVaultUpgradeable_secondary(uint8,uint256,address)[0m
+⇾ [1m[32m[PASSED] [0m[0m[1mAssertion Test: FuzzTester.rebalancerVaultUpgradeable_withdraw(uint256,address,address)[0m
+⇾ [1m[32m[PASSED] [0m[0m[1mAssertion Test: FuzzTester.rebalancerVaultUpgradeable_withdraw_clamped(uint256,address,address)[0m
+⇾ [1m[32m[PASSED] [0m[0m[1mAssertion Test: FuzzTester.rebalancerVaultUpgradeable_withdraw_full(address,address)[0m
+⇾ [1m[32m[PASSED] [0m[0m[1mAssertion Test: FuzzTester.setCurrentActor(uint256)[0m
+⇾ Test summary: 23 test(s) passed, 0 test(s) failed
+⇾ html report(s) saved to: fizz_data/corpus_medusa/coverage/coverage_report.html
+⇾ lcov report(s) saved to: fizz_data/corpus_medusa/coverage/lcov.info

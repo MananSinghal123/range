@@ -1,0 +1,27 @@
+[
+ {
+  "call": {
+   "from": "0x0000000000000000000000000000000000010000",
+   "to": "0x5b73c5498c1e3b4dba84de0f1833c4a029d90519",
+   "nonce": 0,
+   "value": "0x0",
+   "gasLimit": 12500000,
+   "gasPrice": "0x1",
+   "gasFeeCap": "0x0",
+   "gasTipCap": "0x0",
+   "data": "0x08e038c3522c71dfeed36fe751e6e36aee7e759238b5dee02bb9f402a864e32a0d19e0dd000000000000000000000000000000000000000000000000000000000002a300",
+   "dataAbiValues": {
+    "methodSignature": "rebalancerVaultUpgradeable_deposit_clamped(uint256,address)",
+    "inputValues": [
+     "37168180789234692470071847170282863607676348525593071692365052108520195481821",
+     "0x000000000000000000000000000000000002A300"
+    ]
+   },
+   "AccessList": null,
+   "SkipNonceChecks": true,
+   "SkipFromEOACheck": true
+  },
+  "blockNumberDelay": 51596,
+  "blockTimestampDelay": 430379
+ }
+]

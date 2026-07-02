@@ -17,7 +17,7 @@ contract VaultLifecycleTest is BaseTest {
     // ── Deposit ───────────────────────────────────────────────────────────────
 
     function test_deposit_firstDepositMintsDeadShares() public {
-        uint256 assets = 10e8;
+        uint256 assets = 10e18;
         vm.prank(alice);
         uint256 shares = vault.deposit(assets, alice);
 
@@ -39,27 +39,27 @@ contract VaultLifecycleTest is BaseTest {
     }
 
     function test_deposit_secondDepositorGetsProportionalShares() public {
-        _initialDeposit(10e8);
+        _initialDeposit(10e18);
 
         uint256 supplyBefore = vault.totalSupply();
         uint256 taBefore = vault.totalAssets();
 
         vm.prank(bob);
-        uint256 bobShares = vault.deposit(5e8, bob);
+        uint256 bobShares = vault.deposit(5e18, bob);
 
         assertApproxEqAbs(
             bobShares,
-            (5e8 * supplyBefore) / taBefore,
+            (5e18 * supplyBefore) / taBefore,
             1
         );
     }
 
     function test_depositToken1_mintsSharesPricedViaTwap() public {
-        _initialDeposit(10e8);
+        _initialDeposit(10e18);
         uint256 sharesBefore = vault.totalSupply();
 
         vm.prank(alice);
-        uint256 shares = vault.depositToken1(1e18, alice);
+        uint256 shares = vault.depositToken1(1e8, alice); // 1 BTC (8 decimals)
         assertGt(shares, 0);
         assertGt(vault.totalSupply(), sharesBefore);
     }
@@ -68,7 +68,7 @@ contract VaultLifecycleTest is BaseTest {
 
     function test_withdraw_sameBlockReverts() public {
         vm.prank(alice);
-        uint256 shares = vault.deposit(10e8, alice);
+        uint256 shares = vault.deposit(10e18, alice);
         // Same block — no vm.roll() — must revert.
         vm.prank(alice);
         vm.expectRevert();
@@ -84,14 +84,14 @@ contract VaultLifecycleTest is BaseTest {
     }
 
     function test_initializePosition_setsTokenId() public {
-        _initialDeposit(10e8);
-        _initPosition(LO, HI, 5e8, 0);
+        _initialDeposit(10e18);
+        _initPosition(LO, HI, 5e18, 0);
         assertGt(vault.tokenId(), 0);
     }
 
     function test_initializePosition_cannotReinitialize() public {
-        _initialDeposit(10e8);
-        _initPosition(LO, HI, 5e8, 0);
+        _initialDeposit(10e18);
+        _initPosition(LO, HI, 5e18, 0);
         vm.startPrank(owner);
         vm.expectRevert();
         vault.initializePosition(LO, HI, 1e8, 0, 0, 0);
@@ -108,8 +108,8 @@ contract VaultLifecycleTest is BaseTest {
     // ── collectFees ───────────────────────────────────────────────────────────
 
     function test_collectFees_operatorOnly() public {
-        _initialDeposit(10e8);
-        _initPosition(LO, HI, 5e8, 0);
+        _initialDeposit(10e18);
+        _initPosition(LO, HI, 5e18, 0);
         vm.prank(alice);
         vm.expectRevert();
         vault.collectFees(0, 0);
@@ -122,8 +122,8 @@ contract VaultLifecycleTest is BaseTest {
     }
 
     function test_collectFees_deductsFeeToRecipient() public {
-        _initialDeposit(10e8);
-        _initPosition(LO, HI, 5e8, 0);
+        _initialDeposit(10e18);
+        _initPosition(LO, HI, 5e18, 0);
 
         MockPositionManager(PM_ADDR).setPendingFees(vault.tokenId(), 1e6, 1e15);
 
@@ -138,8 +138,8 @@ contract VaultLifecycleTest is BaseTest {
     // ── rebalance ─────────────────────────────────────────────────────────────
 
     function test_rebalance_mintsNewPosition() public {
-        _initialDeposit(10e8);
-        _initPosition(LO, HI, 5e8, 0);
+        _initialDeposit(10e18);
+        _initPosition(LO, HI, 5e18, 0);
         uint256 oldId = vault.tokenId();
 
         vm.prank(operator);
@@ -150,8 +150,8 @@ contract VaultLifecycleTest is BaseTest {
     }
 
     function test_rebalance_incrementsRebalanceCount() public {
-        _initialDeposit(10e8);
-        _initPosition(LO, HI, 5e8, 0);
+        _initialDeposit(10e18);
+        _initPosition(LO, HI, 5e18, 0);
 
         vm.prank(operator);
         vault.rebalance(false, 0);
@@ -164,7 +164,7 @@ contract VaultLifecycleTest is BaseTest {
     // ── withdraw / redeem ─────────────────────────────────────────────────────
 
     function test_withdraw_returnsToken0() public {
-        uint256 assets = 10e8;
+        uint256 assets = 10e18;
         _initialDeposit(assets);
 
         uint256 withdrawAmt = 2e8;
@@ -181,7 +181,7 @@ contract VaultLifecycleTest is BaseTest {
     }
 
     function test_redeem_burnsSharesToTokens() public {
-        _initialDeposit(10e8);
+        _initialDeposit(10e18);
         uint256 shares = vault.balanceOf(alice);
 
         vm.prank(alice);

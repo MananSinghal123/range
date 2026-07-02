@@ -1,0 +1,166 @@
+[1m[32m⇾[0m[0m [1mReading the configuration file at: [1m/home/manan/mezo-rebalance/medusa.json[0m[0m
+[1m[32m⇾[0m[0m [1mCompiling targets with [1mcrytic-compile[0m[0m
+[1m[32m⇾[0m[0m [1mRunning command:
+/home/manan/.local/bin/crytic-compile . --export-format solc --export-dir fizz_data/crytic-export --foundry-compile-all[0m
+[1m[32m⇾[0m[0m [1mFinished compiling targets in 25s[0m
+[1m[32m⇾[0m[0m [1m[1martifacts: [0mMedusa is running against a [1m[32mnew[0m[0m set of build artifacts[0m
+[1m[32m⇾[0m[0m [1mNo Slither cached results found at fizz_data/slither_results.json[0m
+[1m[32m⇾[0m[0m [1mRunning Slither:
+slither . --ignore-compile --print echidna --json -[0m
+[1m[33mwarn[0m[0m [1mFailed to run slither[31m
+‣ exec: "slither": executable file not found in $PATH[0m[0m
+[1m[32m⇾[0m[0m [1mRunning with a timeout of [1m300[0m[1m seconds[0m[0m
+[1m[32m⇾[0m[0m [1mSetting up test chain[0m
+[1m[32m⇾[0m[0m [1mFinished setting up test chain[0m
+[1m[32m⇾[0m[0m [1mCreating corpus...[0m
+[1m[32m⇾[0m[0m [1mFuzzing with [1m10[0m workers[0m
+[1m[32m⇾[0m[0m [1m[1m[32m[NOT STARTED] [0m[0m[1mAssertion Test: FuzzTester.rebalancerVaultUpgradeable_redeem_full(address,address)[0m[0m
+[1m[32m⇾[0m[0m [1m[1m[32m[NOT STARTED] [0m[0m[1mAssertion Test: FuzzTester.rebalancerVaultUpgradeable_withdraw_full(address,address)[0m[0m
+[1m[32m⇾[0m[0m [1m[1m[32m[NOT STARTED] [0m[0m[1mAssertion Test: FuzzTester.rebalancerVaultUpgradeable_deposit(uint256,address)[0m[0m
+[1m[32m⇾[0m[0m [1m[1m[32m[NOT STARTED] [0m[0m[1mAssertion Test: FuzzTester.rebalancerVaultUpgradeable_depositToken1(uint256,address)[0m[0m
+[1m[32m⇾[0m[0m [1m[1m[32m[NOT STARTED] [0m[0m[1mAssertion Test: FuzzTester.rebalancerVaultUpgradeable_depositToken1_clamped(uint256,address)[0m[0m
+[1m[32m⇾[0m[0m [1m[1m[32m[NOT STARTED] [0m[0m[1mAssertion Test: FuzzTester.rebalancerVaultUpgradeable_deposit_smallAmount(uint256,address)[0m[0m
+[1m[32m⇾[0m[0m [1m[1m[32m[NOT STARTED] [0m[0m[1mAssertion Test: FuzzTester.rebalancerVaultUpgradeable_withdraw_clamped(uint256,address,address)[0m[0m
+[1m[32m⇾[0m[0m [1m[1m[32m[NOT STARTED] [0m[0m[1mAssertion Test: FuzzTester.rebalancerVaultUpgradeable_collectFees(uint256,uint256)[0m[0m
+[1m[32m⇾[0m[0m [1m[1m[32m[NOT STARTED] [0m[0m[1mAssertion Test: FuzzTester.rebalancerVaultUpgradeable_collectFees_clamped(uint256,uint256)[0m[0m
+[1m[32m⇾[0m[0m [1m[1m[32m[NOT STARTED] [0m[0m[1mAssertion Test: FuzzTester.rebalancerVaultUpgradeable_donateETH(uint256)[0m[0m
+[1m[32m⇾[0m[0m [1m[1m[32m[NOT STARTED] [0m[0m[1mAssertion Test: FuzzTester.rebalancerVaultUpgradeable_donateToken1(uint256)[0m[0m
+[1m[32m⇾[0m[0m [1m[1m[32m[NOT STARTED] [0m[0m[1mAssertion Test: FuzzTester.rebalancerVaultUpgradeable_mint_clamped(uint256,address)[0m[0m
+[1m[32m⇾[0m[0m [1m[1m[32m[NOT STARTED] [0m[0m[1mAssertion Test: FuzzTester.rebalancerVaultUpgradeable_redeem(uint256,address,address)[0m[0m
+[1m[32m⇾[0m[0m [1m[1m[32m[NOT STARTED] [0m[0m[1mAssertion Test: FuzzTester.rebalancerVaultUpgradeable_withdraw(uint256,address,address)[0m[0m
+[1m[32m⇾[0m[0m [1m[1m[32m[NOT STARTED] [0m[0m[1mAssertion Test: FuzzTester.setCurrentActor(uint256)[0m[0m
+[1m[32m⇾[0m[0m [1m[1m[32m[NOT STARTED] [0m[0m[1mAssertion Test: FuzzTester.rebalancerVaultUpgradeable_mint(uint256,address)[0m[0m
+[1m[32m⇾[0m[0m [1m[1mfuzz: [0melapsed: [1m      0s[0m, calls: [1m         0 (     0/sec)[0m, seq/s: [1m     0[0m, branches: [1m  5547[0m, corpus: [1m    0[0m, failures: [1m0/0[0m, gas/s: [1m           0[0m[0m
+[1m[32m⇾[0m[0m [1m[1m[32m[NOT STARTED] [0m[0m[1mAssertion Test: FuzzTester.rebalancerVaultUpgradeable_rebalance(bool,uint256)[0m[0m
+[1m[32m⇾[0m[0m [1m[1m[32m[NOT STARTED] [0m[0m[1mAssertion Test: FuzzTester.rebalancerVaultUpgradeable_rebalance_clamped(bool,uint256)[0m[0m
+[1m[32m⇾[0m[0m [1m[1m[32m[NOT STARTED] [0m[0m[1mAssertion Test: FuzzTester.rebalancerVaultUpgradeable_redeem_clamped(uint256,address,address)[0m[0m
+[1m[32m⇾[0m[0m [1m[1m[32m[NOT STARTED] [0m[0m[1mAssertion Test: FuzzTester.rebalancerVaultUpgradeable_secondary(uint8,uint256,address)[0m[0m
+[1m[32m⇾[0m[0m [1m[1m[32m[NOT STARTED] [0m[0m[1mAssertion Test: FuzzTester.rebalancerVaultUpgradeable_accrueFees(uint256,uint256)[0m[0m
+[1m[32m⇾[0m[0m [1m[1m[32m[NOT STARTED] [0m[0m[1mAssertion Test: FuzzTester.rebalancerVaultUpgradeable_deposit_clamped(uint256,address)[0m[0m
+[1m[32m⇾[0m[0m [1m[1m[32m[NOT STARTED] [0m[0m[1mAssertion Test: FuzzTester.rebalancerVaultUpgradeable_donateToken0(uint256)[0m[0m
+[1m[32m⇾[0m[0m [1m[1mfuzz: [0melapsed: [1m      3s[0m, calls: [1m      4496 (  1497/sec)[0m, seq/s: [1m    13[0m, branches: [1m 11955[0m, corpus: [1m   89[0m, failures: [1m0/40[0m, gas/s: [1m   355247845[0m[0m
+[1m[32m⇾[0m[0m [1m[1mfuzz: [0melapsed: [1m      6s[0m, calls: [1m      9315 (  1606/sec)[0m, seq/s: [1m    15[0m, branches: [1m 12017[0m, corpus: [1m   92[0m, failures: [1m0/88[0m, gas/s: [1m   383419048[0m[0m
+[1m[32m⇾[0m[0m [1m[1mfuzz: [0melapsed: [1m      9s[0m, calls: [1m     14581 (  1754/sec)[0m, seq/s: [1m    17[0m, branches: [1m 12027[0m, corpus: [1m   94[0m, failures: [1m0/140[0m, gas/s: [1m   408651318[0m[0m
+[1m[32m⇾[0m[0m [1m[1mfuzz: [0melapsed: [1m     12s[0m, calls: [1m     19317 (  1578/sec)[0m, seq/s: [1m    15[0m, branches: [1m 12041[0m, corpus: [1m   97[0m, failures: [1m0/188[0m, gas/s: [1m   395395056[0m[0m
+[1m[32m⇾[0m[0m [1m[1mfuzz: [0melapsed: [1m     15s[0m, calls: [1m     24044 (  1575/sec)[0m, seq/s: [1m    16[0m, branches: [1m 12074[0m, corpus: [1m   99[0m, failures: [1m0/238[0m, gas/s: [1m   382226461[0m[0m
+[1m[32m⇾[0m[0m [1m[1mfuzz: [0melapsed: [1m     18s[0m, calls: [1m     29194 (  1715/sec)[0m, seq/s: [1m    15[0m, branches: [1m 12107[0m, corpus: [1m  101[0m, failures: [1m0/286[0m, gas/s: [1m   410990789[0m[0m
+[1m[32m⇾[0m[0m [1m[1mfuzz: [0melapsed: [1m     21s[0m, calls: [1m     34344 (  1716/sec)[0m, seq/s: [1m    16[0m, branches: [1m 12156[0m, corpus: [1m  103[0m, failures: [1m0/337[0m, gas/s: [1m   403276266[0m[0m
+[1m[32m⇾[0m[0m [1m[1mfuzz: [0melapsed: [1m     24s[0m, calls: [1m     39888 (  1847/sec)[0m, seq/s: [1m    19[0m, branches: [1m 12156[0m, corpus: [1m  103[0m, failures: [1m0/395[0m, gas/s: [1m   411547675[0m[0m
+[1m[32m⇾[0m[0m [1m[1mfuzz: [0melapsed: [1m     27s[0m, calls: [1m     44787 (  1632/sec)[0m, seq/s: [1m    15[0m, branches: [1m 12214[0m, corpus: [1m  105[0m, failures: [1m0/443[0m, gas/s: [1m   401096554[0m[0m
+[1m[32m⇾[0m[0m [1m[1mfuzz: [0melapsed: [1m     30s[0m, calls: [1m     50202 (  1804/sec)[0m, seq/s: [1m    17[0m, branches: [1m 12214[0m, corpus: [1m  105[0m, failures: [1m0/496[0m, gas/s: [1m   398729127[0m[0m
+[1m[32m⇾[0m[0m [1m[1mfuzz: [0melapsed: [1m     33s[0m, calls: [1m     55200 (  1661/sec)[0m, seq/s: [1m    16[0m, branches: [1m 12220[0m, corpus: [1m  106[0m, failures: [1m0/546[0m, gas/s: [1m   384580226[0m[0m
+[1m[32m⇾[0m[0m [1m[1mfuzz: [0melapsed: [1m     36s[0m, calls: [1m     60606 (  1796/sec)[0m, seq/s: [1m    17[0m, branches: [1m 12220[0m, corpus: [1m  106[0m, failures: [1m0/600[0m, gas/s: [1m   410729311[0m[0m
+[1m[32m⇾[0m[0m [1m[1mfuzz: [0melapsed: [1m     39s[0m, calls: [1m     65823 (  1738/sec)[0m, seq/s: [1m    17[0m, branches: [1m 12220[0m, corpus: [1m  106[0m, failures: [1m0/652[0m, gas/s: [1m   401417612[0m[0m
+[1m[32m⇾[0m[0m [1m[1mfuzz: [0melapsed: [1m     42s[0m, calls: [1m     70816 (  1664/sec)[0m, seq/s: [1m    16[0m, branches: [1m 12220[0m, corpus: [1m  106[0m, failures: [1m0/702[0m, gas/s: [1m   386908610[0m[0m
+[1m[32m⇾[0m[0m [1m[1mfuzz: [0melapsed: [1m     45s[0m, calls: [1m     75601 (  1594/sec)[0m, seq/s: [1m    16[0m, branches: [1m 12654[0m, corpus: [1m  108[0m, failures: [1m0/751[0m, gas/s: [1m   375498023[0m[0m
+[1m[32m⇾[0m[0m [1m[1mfuzz: [0melapsed: [1m     48s[0m, calls: [1m     80909 (  1768/sec)[0m, seq/s: [1m    17[0m, branches: [1m 12654[0m, corpus: [1m  108[0m, failures: [1m0/805[0m, gas/s: [1m   393060911[0m[0m
+[1m[32m⇾[0m[0m [1m[1mfuzz: [0melapsed: [1m     51s[0m, calls: [1m     85574 (  1554/sec)[0m, seq/s: [1m    14[0m, branches: [1m 12654[0m, corpus: [1m  108[0m, failures: [1m0/850[0m, gas/s: [1m   379920009[0m[0m
+[1m[32m⇾[0m[0m [1m[1mfuzz: [0melapsed: [1m     54s[0m, calls: [1m     91432 (  1951/sec)[0m, seq/s: [1m    19[0m, branches: [1m 12654[0m, corpus: [1m  108[0m, failures: [1m0/909[0m, gas/s: [1m   409059186[0m[0m
+[1m[32m⇾[0m[0m [1m[1mfuzz: [0melapsed: [1m     57s[0m, calls: [1m     95939 (  1502/sec)[0m, seq/s: [1m    14[0m, branches: [1m 12654[0m, corpus: [1m  108[0m, failures: [1m0/954[0m, gas/s: [1m   346830904[0m[0m
+[1m[32m⇾[0m[0m [1m[1mfuzz: [0melapsed: [1m   1m00s[0m, calls: [1m    100340 (  1466/sec)[0m, seq/s: [1m    14[0m, branches: [1m 12654[0m, corpus: [1m  108[0m, failures: [1m0/998[0m, gas/s: [1m   352606599[0m[0m
+[1m[32m⇾[0m[0m [1m[1mfuzz: [0melapsed: [1m   1m03s[0m, calls: [1m    104928 (  1529/sec)[0m, seq/s: [1m    15[0m, branches: [1m 12660[0m, corpus: [1m  109[0m, failures: [1m0/1046[0m, gas/s: [1m   361886170[0m[0m
+[1m[32m⇾[0m[0m [1m[1mfuzz: [0melapsed: [1m   1m06s[0m, calls: [1m    110202 (  1757/sec)[0m, seq/s: [1m    17[0m, branches: [1m 12660[0m, corpus: [1m  109[0m, failures: [1m0/1098[0m, gas/s: [1m   403495890[0m[0m
+[1m[32m⇾[0m[0m [1m[1mfuzz: [0melapsed: [1m   1m09s[0m, calls: [1m    115284 (  1683/sec)[0m, seq/s: [1m    16[0m, branches: [1m 12660[0m, corpus: [1m  109[0m, failures: [1m0/1148[0m, gas/s: [1m   400557135[0m[0m
+[1m[32m⇾[0m[0m [1m[1mfuzz: [0melapsed: [1m   1m12s[0m, calls: [1m    120076 (  1596/sec)[0m, seq/s: [1m    16[0m, branches: [1m 12660[0m, corpus: [1m  109[0m, failures: [1m0/1197[0m, gas/s: [1m   389994465[0m[0m
+[1m[32m⇾[0m[0m [1m[1mfuzz: [0melapsed: [1m   1m15s[0m, calls: [1m    124340 (  1421/sec)[0m, seq/s: [1m    13[0m, branches: [1m 12660[0m, corpus: [1m  109[0m, failures: [1m0/1237[0m, gas/s: [1m   346352993[0m[0m
+[1m[32m⇾[0m[0m [1m[1mfuzz: [0melapsed: [1m   1m18s[0m, calls: [1m    129218 (  1625/sec)[0m, seq/s: [1m    16[0m, branches: [1m 12660[0m, corpus: [1m  109[0m, failures: [1m0/1287[0m, gas/s: [1m   396675997[0m[0m
+[1m[32m⇾[0m[0m [1m[1mfuzz: [0melapsed: [1m   1m21s[0m, calls: [1m    134402 (  1727/sec)[0m, seq/s: [1m    17[0m, branches: [1m 12660[0m, corpus: [1m  109[0m, failures: [1m0/1339[0m, gas/s: [1m   408024952[0m[0m
+[1m[32m⇾[0m[0m [1m[1mfuzz: [0melapsed: [1m   1m24s[0m, calls: [1m    139309 (  1635/sec)[0m, seq/s: [1m    16[0m, branches: [1m 12660[0m, corpus: [1m  109[0m, failures: [1m0/1389[0m, gas/s: [1m   382709250[0m[0m
+[1m[32m⇾[0m[0m [1m[1mfuzz: [0melapsed: [1m   1m27s[0m, calls: [1m    144447 (  1711/sec)[0m, seq/s: [1m    16[0m, branches: [1m 12660[0m, corpus: [1m  109[0m, failures: [1m0/1440[0m, gas/s: [1m   398147417[0m[0m
+[1m[32m⇾[0m[0m [1m[1mfuzz: [0melapsed: [1m   1m30s[0m, calls: [1m    149754 (  1762/sec)[0m, seq/s: [1m    17[0m, branches: [1m 12660[0m, corpus: [1m  109[0m, failures: [1m0/1492[0m, gas/s: [1m   403964009[0m[0m
+[1m[32m⇾[0m[0m [1m[1mfuzz: [0melapsed: [1m   1m33s[0m, calls: [1m    154107 (  1450/sec)[0m, seq/s: [1m    14[0m, branches: [1m 12660[0m, corpus: [1m  109[0m, failures: [1m0/1535[0m, gas/s: [1m   367917366[0m[0m
+[1m[32m⇾[0m[0m [1m[1mfuzz: [0melapsed: [1m   1m36s[0m, calls: [1m    158139 (  1343/sec)[0m, seq/s: [1m    13[0m, branches: [1m 12660[0m, corpus: [1m  109[0m, failures: [1m0/1575[0m, gas/s: [1m   304912501[0m[0m
+[1m[32m⇾[0m[0m [1m[1mfuzz: [0melapsed: [1m   1m39s[0m, calls: [1m    162128 (  1329/sec)[0m, seq/s: [1m    13[0m, branches: [1m 12660[0m, corpus: [1m  109[0m, failures: [1m0/1615[0m, gas/s: [1m   315610164[0m[0m
+[1m[32m⇾[0m[0m [1m[1mfuzz: [0melapsed: [1m   1m42s[0m, calls: [1m    166204 (  1358/sec)[0m, seq/s: [1m    14[0m, branches: [1m 12660[0m, corpus: [1m  109[0m, failures: [1m0/1658[0m, gas/s: [1m   324017848[0m[0m
+[1m[32m⇾[0m[0m [1m[1mfuzz: [0melapsed: [1m   1m45s[0m, calls: [1m    170415 (  1403/sec)[0m, seq/s: [1m    13[0m, branches: [1m 12660[0m, corpus: [1m  109[0m, failures: [1m0/1700[0m, gas/s: [1m   335495973[0m[0m
+[1m[32m⇾[0m[0m [1m[1mfuzz: [0melapsed: [1m   1m48s[0m, calls: [1m    174675 (  1419/sec)[0m, seq/s: [1m    13[0m, branches: [1m 12660[0m, corpus: [1m  109[0m, failures: [1m0/1742[0m, gas/s: [1m   327416385[0m[0m
+[1m[32m⇾[0m[0m [1m[1mfuzz: [0melapsed: [1m   1m51s[0m, calls: [1m    178943 (  1422/sec)[0m, seq/s: [1m    14[0m, branches: [1m 12660[0m, corpus: [1m  109[0m, failures: [1m0/1785[0m, gas/s: [1m   336911254[0m[0m
+[1m[32m⇾[0m[0m [1m[1mfuzz: [0melapsed: [1m   1m54s[0m, calls: [1m    183237 (  1430/sec)[0m, seq/s: [1m    14[0m, branches: [1m 12660[0m, corpus: [1m  109[0m, failures: [1m0/1828[0m, gas/s: [1m   331472076[0m[0m
+[1m[32m⇾[0m[0m [1m[1mfuzz: [0melapsed: [1m   1m57s[0m, calls: [1m    188102 (  1615/sec)[0m, seq/s: [1m    16[0m, branches: [1m 12660[0m, corpus: [1m  109[0m, failures: [1m0/1878[0m, gas/s: [1m   360125377[0m[0m
+[1m[32m⇾[0m[0m [1m[1mfuzz: [0melapsed: [1m   2m00s[0m, calls: [1m    192461 (  1452/sec)[0m, seq/s: [1m    13[0m, branches: [1m 12660[0m, corpus: [1m  109[0m, failures: [1m0/1920[0m, gas/s: [1m   347823444[0m[0m
+[1m[32m⇾[0m[0m [1m[1mfuzz: [0melapsed: [1m   2m03s[0m, calls: [1m    196920 (  1486/sec)[0m, seq/s: [1m    14[0m, branches: [1m 12660[0m, corpus: [1m  109[0m, failures: [1m0/1964[0m, gas/s: [1m   344271768[0m[0m
+[1m[32m⇾[0m[0m [1m[1mfuzz: [0melapsed: [1m   2m06s[0m, calls: [1m    201075 (  1384/sec)[0m, seq/s: [1m    14[0m, branches: [1m 12660[0m, corpus: [1m  109[0m, failures: [1m0/2007[0m, gas/s: [1m   339010132[0m[0m
+[1m[32m⇾[0m[0m [1m[1mfuzz: [0melapsed: [1m   2m09s[0m, calls: [1m    204965 (  1295/sec)[0m, seq/s: [1m    12[0m, branches: [1m 12660[0m, corpus: [1m  109[0m, failures: [1m0/2046[0m, gas/s: [1m   308289429[0m[0m
+[1m[32m⇾[0m[0m [1m[1mfuzz: [0melapsed: [1m   2m12s[0m, calls: [1m    208744 (  1259/sec)[0m, seq/s: [1m    11[0m, branches: [1m 12660[0m, corpus: [1m  109[0m, failures: [1m0/2082[0m, gas/s: [1m   312864596[0m[0m
+[1m[32m⇾[0m[0m [1m[1mfuzz: [0melapsed: [1m   2m15s[0m, calls: [1m    212526 (  1260/sec)[0m, seq/s: [1m    12[0m, branches: [1m 12660[0m, corpus: [1m  109[0m, failures: [1m0/2121[0m, gas/s: [1m   313026075[0m[0m
+[1m[32m⇾[0m[0m [1m[1mfuzz: [0melapsed: [1m   2m18s[0m, calls: [1m    216570 (  1347/sec)[0m, seq/s: [1m    13[0m, branches: [1m 12660[0m, corpus: [1m  109[0m, failures: [1m0/2162[0m, gas/s: [1m   314333795[0m[0m
+[1m[32m⇾[0m[0m [1m[1mfuzz: [0melapsed: [1m   2m21s[0m, calls: [1m    220215 (  1214/sec)[0m, seq/s: [1m    11[0m, branches: [1m 12660[0m, corpus: [1m  109[0m, failures: [1m0/2198[0m, gas/s: [1m   288565236[0m[0m
+[1m[32m⇾[0m[0m [1m[1mfuzz: [0melapsed: [1m   2m24s[0m, calls: [1m    223480 (  1088/sec)[0m, seq/s: [1m    10[0m, branches: [1m 12660[0m, corpus: [1m  109[0m, failures: [1m0/2230[0m, gas/s: [1m   266037850[0m[0m
+[1m[32m⇾[0m[0m [1m[1mfuzz: [0melapsed: [1m   2m27s[0m, calls: [1m    227184 (  1234/sec)[0m, seq/s: [1m    12[0m, branches: [1m 12666[0m, corpus: [1m  110[0m, failures: [1m0/2267[0m, gas/s: [1m   284161650[0m[0m
+[1m[32m⇾[0m[0m [1m[1mfuzz: [0melapsed: [1m   2m30s[0m, calls: [1m    230941 (  1251/sec)[0m, seq/s: [1m    12[0m, branches: [1m 12666[0m, corpus: [1m  110[0m, failures: [1m0/2305[0m, gas/s: [1m   294172578[0m[0m
+[1m[32m⇾[0m[0m [1m[1mfuzz: [0melapsed: [1m   2m33s[0m, calls: [1m    234585 (  1214/sec)[0m, seq/s: [1m    12[0m, branches: [1m 12666[0m, corpus: [1m  110[0m, failures: [1m0/2342[0m, gas/s: [1m   282760970[0m[0m
+[1m[32m⇾[0m[0m [1m[1mfuzz: [0melapsed: [1m   2m36s[0m, calls: [1m    239161 (  1525/sec)[0m, seq/s: [1m    14[0m, branches: [1m 12666[0m, corpus: [1m  110[0m, failures: [1m0/2387[0m, gas/s: [1m   330936183[0m[0m
+[1m[32m⇾[0m[0m [1m[1mfuzz: [0melapsed: [1m   2m39s[0m, calls: [1m    243458 (  1423/sec)[0m, seq/s: [1m    14[0m, branches: [1m 12666[0m, corpus: [1m  110[0m, failures: [1m0/2430[0m, gas/s: [1m   318701032[0m[0m
+[1m[32m⇾[0m[0m [1m[1mfuzz: [0melapsed: [1m   2m42s[0m, calls: [1m    247318 (  1286/sec)[0m, seq/s: [1m    12[0m, branches: [1m 12666[0m, corpus: [1m  110[0m, failures: [1m0/2468[0m, gas/s: [1m   301698322[0m[0m
+[1m[32m⇾[0m[0m [1m[1mfuzz: [0melapsed: [1m   2m45s[0m, calls: [1m    251376 (  1352/sec)[0m, seq/s: [1m    13[0m, branches: [1m 12666[0m, corpus: [1m  110[0m, failures: [1m0/2508[0m, gas/s: [1m   296138922[0m[0m
+[1m[32m⇾[0m[0m [1m[1mfuzz: [0melapsed: [1m   2m48s[0m, calls: [1m    255151 (  1258/sec)[0m, seq/s: [1m    12[0m, branches: [1m 12666[0m, corpus: [1m  110[0m, failures: [1m0/2546[0m, gas/s: [1m   275594200[0m[0m
+[1m[32m⇾[0m[0m [1m[1mfuzz: [0melapsed: [1m   2m51s[0m, calls: [1m    258923 (  1257/sec)[0m, seq/s: [1m    12[0m, branches: [1m 12666[0m, corpus: [1m  110[0m, failures: [1m0/2585[0m, gas/s: [1m   275277517[0m[0m
+[1m[32m⇾[0m[0m [1m[1mfuzz: [0melapsed: [1m   2m54s[0m, calls: [1m    263003 (  1359/sec)[0m, seq/s: [1m    13[0m, branches: [1m 12666[0m, corpus: [1m  110[0m, failures: [1m0/2625[0m, gas/s: [1m   304055204[0m[0m
+[1m[32m⇾[0m[0m [1m[1mfuzz: [0melapsed: [1m   2m57s[0m, calls: [1m    267348 (  1448/sec)[0m, seq/s: [1m    14[0m, branches: [1m 12666[0m, corpus: [1m  110[0m, failures: [1m0/2668[0m, gas/s: [1m   327886714[0m[0m
+[1m[32m⇾[0m[0m [1m[1mfuzz: [0melapsed: [1m   3m00s[0m, calls: [1m    271913 (  1521/sec)[0m, seq/s: [1m    15[0m, branches: [1m 12666[0m, corpus: [1m  110[0m, failures: [1m0/2714[0m, gas/s: [1m   341863140[0m[0m
+[1m[32m⇾[0m[0m [1m[1mfuzz: [0melapsed: [1m   3m03s[0m, calls: [1m    276964 (  1682/sec)[0m, seq/s: [1m    16[0m, branches: [1m 12667[0m, corpus: [1m  111[0m, failures: [1m0/2765[0m, gas/s: [1m   330338319[0m[0m
+[1m[32m⇾[0m[0m [1m[1mfuzz: [0melapsed: [1m   3m06s[0m, calls: [1m    280975 (  1336/sec)[0m, seq/s: [1m    13[0m, branches: [1m 12669[0m, corpus: [1m  112[0m, failures: [1m0/2805[0m, gas/s: [1m   313308653[0m[0m
+[1m[32m⇾[0m[0m [1m[1mfuzz: [0melapsed: [1m   3m09s[0m, calls: [1m    284818 (  1280/sec)[0m, seq/s: [1m    12[0m, branches: [1m 12669[0m, corpus: [1m  112[0m, failures: [1m0/2842[0m, gas/s: [1m   313746780[0m[0m
+[1m[32m⇾[0m[0m [1m[1mfuzz: [0melapsed: [1m   3m12s[0m, calls: [1m    288508 (  1222/sec)[0m, seq/s: [1m    12[0m, branches: [1m 12669[0m, corpus: [1m  112[0m, failures: [1m0/2880[0m, gas/s: [1m   290003178[0m[0m
+[1m[32m⇾[0m[0m [1m[1mfuzz: [0melapsed: [1m   3m15s[0m, calls: [1m    292543 (  1344/sec)[0m, seq/s: [1m    13[0m, branches: [1m 12669[0m, corpus: [1m  112[0m, failures: [1m0/2922[0m, gas/s: [1m   299610736[0m[0m
+[1m[32m⇾[0m[0m [1m[1mfuzz: [0melapsed: [1m   3m18s[0m, calls: [1m    296422 (  1292/sec)[0m, seq/s: [1m    12[0m, branches: [1m 12669[0m, corpus: [1m  112[0m, failures: [1m0/2959[0m, gas/s: [1m   313121499[0m[0m
+[1m[32m⇾[0m[0m [1m[1mfuzz: [0melapsed: [1m   3m21s[0m, calls: [1m    300437 (  1338/sec)[0m, seq/s: [1m    13[0m, branches: [1m 12669[0m, corpus: [1m  112[0m, failures: [1m0/2999[0m, gas/s: [1m   303871007[0m[0m
+[1m[32m⇾[0m[0m [1m[1mfuzz: [0melapsed: [1m   3m24s[0m, calls: [1m    304059 (  1206/sec)[0m, seq/s: [1m    12[0m, branches: [1m 12669[0m, corpus: [1m  112[0m, failures: [1m0/3036[0m, gas/s: [1m   261570082[0m[0m
+[1m[32m⇾[0m[0m [1m[1mfuzz: [0melapsed: [1m   3m28s[0m, calls: [1m    307930 (  1290/sec)[0m, seq/s: [1m    12[0m, branches: [1m 12669[0m, corpus: [1m  112[0m, failures: [1m0/3074[0m, gas/s: [1m   300840421[0m[0m
+[1m[32m⇾[0m[0m [1m[1mfuzz: [0melapsed: [1m   3m31s[0m, calls: [1m    311702 (  1257/sec)[0m, seq/s: [1m    12[0m, branches: [1m 12669[0m, corpus: [1m  112[0m, failures: [1m0/3112[0m, gas/s: [1m   298659092[0m[0m
+[1m[32m⇾[0m[0m [1m[1mfuzz: [0melapsed: [1m   3m34s[0m, calls: [1m    315763 (  1352/sec)[0m, seq/s: [1m    12[0m, branches: [1m 12669[0m, corpus: [1m  112[0m, failures: [1m0/3151[0m, gas/s: [1m   314692923[0m[0m
+[1m[32m⇾[0m[0m [1m[1mfuzz: [0melapsed: [1m   3m37s[0m, calls: [1m    319481 (  1239/sec)[0m, seq/s: [1m    12[0m, branches: [1m 12669[0m, corpus: [1m  112[0m, failures: [1m0/3189[0m, gas/s: [1m   268326458[0m[0m
+[1m[32m⇾[0m[0m [1m[1mfuzz: [0melapsed: [1m   3m40s[0m, calls: [1m    322799 (  1105/sec)[0m, seq/s: [1m    11[0m, branches: [1m 12669[0m, corpus: [1m  112[0m, failures: [1m0/3223[0m, gas/s: [1m   262644317[0m[0m
+[1m[32m⇾[0m[0m [1m[1mfuzz: [0melapsed: [1m   3m43s[0m, calls: [1m    326590 (  1257/sec)[0m, seq/s: [1m    12[0m, branches: [1m 12669[0m, corpus: [1m  112[0m, failures: [1m0/3260[0m, gas/s: [1m   308568797[0m[0m
+[1m[32m⇾[0m[0m [1m[1mfuzz: [0melapsed: [1m   3m46s[0m, calls: [1m    330457 (  1288/sec)[0m, seq/s: [1m    13[0m, branches: [1m 12669[0m, corpus: [1m  112[0m, failures: [1m0/3300[0m, gas/s: [1m   274243502[0m[0m
+[1m[32m⇾[0m[0m [1m[1mfuzz: [0melapsed: [1m   3m49s[0m, calls: [1m    334140 (  1227/sec)[0m, seq/s: [1m    12[0m, branches: [1m 12669[0m, corpus: [1m  112[0m, failures: [1m0/3337[0m, gas/s: [1m   295060981[0m[0m
+[1m[32m⇾[0m[0m [1m[1mfuzz: [0melapsed: [1m   3m52s[0m, calls: [1m    337842 (  1233/sec)[0m, seq/s: [1m    12[0m, branches: [1m 12669[0m, corpus: [1m  112[0m, failures: [1m0/3375[0m, gas/s: [1m   288333011[0m[0m
+[1m[32m⇾[0m[0m [1m[1mfuzz: [0melapsed: [1m   3m55s[0m, calls: [1m    341809 (  1321/sec)[0m, seq/s: [1m    12[0m, branches: [1m 12669[0m, corpus: [1m  112[0m, failures: [1m0/3413[0m, gas/s: [1m   299679720[0m[0m
+[1m[32m⇾[0m[0m [1m[1mfuzz: [0melapsed: [1m   3m58s[0m, calls: [1m    345919 (  1369/sec)[0m, seq/s: [1m    13[0m, branches: [1m 12669[0m, corpus: [1m  112[0m, failures: [1m0/3455[0m, gas/s: [1m   304793891[0m[0m
+[1m[32m⇾[0m[0m [1m[1mfuzz: [0melapsed: [1m   4m01s[0m, calls: [1m    350483 (  1520/sec)[0m, seq/s: [1m    15[0m, branches: [1m 12669[0m, corpus: [1m  112[0m, failures: [1m0/3501[0m, gas/s: [1m   330726869[0m[0m
+[1m[32m⇾[0m[0m [1m[1mfuzz: [0melapsed: [1m   4m04s[0m, calls: [1m    354106 (  1207/sec)[0m, seq/s: [1m    11[0m, branches: [1m 12669[0m, corpus: [1m  112[0m, failures: [1m0/3536[0m, gas/s: [1m   293548537[0m[0m
+[1m[32m⇾[0m[0m [1m[1mfuzz: [0melapsed: [1m   4m07s[0m, calls: [1m    357468 (  1120/sec)[0m, seq/s: [1m    11[0m, branches: [1m 12669[0m, corpus: [1m  112[0m, failures: [1m0/3571[0m, gas/s: [1m   256627164[0m[0m
+[1m[32m⇾[0m[0m [1m[1mfuzz: [0melapsed: [1m   4m10s[0m, calls: [1m    361182 (  1237/sec)[0m, seq/s: [1m    11[0m, branches: [1m 12669[0m, corpus: [1m  112[0m, failures: [1m0/3607[0m, gas/s: [1m   299475982[0m[0m
+[1m[32m⇾[0m[0m [1m[1mfuzz: [0melapsed: [1m   4m13s[0m, calls: [1m    364788 (  1201/sec)[0m, seq/s: [1m    12[0m, branches: [1m 12669[0m, corpus: [1m  112[0m, failures: [1m0/3645[0m, gas/s: [1m   285180066[0m[0m
+[1m[32m⇾[0m[0m [1m[1mfuzz: [0melapsed: [1m   4m16s[0m, calls: [1m    368337 (  1182/sec)[0m, seq/s: [1m    10[0m, branches: [1m 12669[0m, corpus: [1m  112[0m, failures: [1m0/3677[0m, gas/s: [1m   277861204[0m[0m
+[1m[32m⇾[0m[0m [1m[1mfuzz: [0melapsed: [1m   4m19s[0m, calls: [1m    372992 (  1551/sec)[0m, seq/s: [1m    15[0m, branches: [1m 12669[0m, corpus: [1m  112[0m, failures: [1m0/3725[0m, gas/s: [1m   326003309[0m[0m
+[1m[32m⇾[0m[0m [1m[1mfuzz: [0melapsed: [1m   4m22s[0m, calls: [1m    377069 (  1358/sec)[0m, seq/s: [1m    13[0m, branches: [1m 12669[0m, corpus: [1m  112[0m, failures: [1m0/3767[0m, gas/s: [1m   307807914[0m[0m
+[1m[32m⇾[0m[0m [1m[1mfuzz: [0melapsed: [1m   4m25s[0m, calls: [1m    381511 (  1480/sec)[0m, seq/s: [1m    14[0m, branches: [1m 12669[0m, corpus: [1m  112[0m, failures: [1m0/3811[0m, gas/s: [1m   323848220[0m[0m
+[1m[32m⇾[0m[0m [1m[1mfuzz: [0melapsed: [1m   4m28s[0m, calls: [1m    385745 (  1410/sec)[0m, seq/s: [1m    13[0m, branches: [1m 12669[0m, corpus: [1m  112[0m, failures: [1m0/3852[0m, gas/s: [1m   318851349[0m[0m
+[1m[32m⇾[0m[0m [1m[1mfuzz: [0melapsed: [1m   4m31s[0m, calls: [1m    389408 (  1220/sec)[0m, seq/s: [1m    12[0m, branches: [1m 12669[0m, corpus: [1m  112[0m, failures: [1m0/3889[0m, gas/s: [1m   307073079[0m[0m
+[1m[32m⇾[0m[0m [1m[1mfuzz: [0melapsed: [1m   4m34s[0m, calls: [1m    393573 (  1387/sec)[0m, seq/s: [1m    13[0m, branches: [1m 12669[0m, corpus: [1m  112[0m, failures: [1m0/3931[0m, gas/s: [1m   319333498[0m[0m
+[1m[32m⇾[0m[0m [1m[1mfuzz: [0melapsed: [1m   4m37s[0m, calls: [1m    397534 (  1319/sec)[0m, seq/s: [1m    13[0m, branches: [1m 12669[0m, corpus: [1m  112[0m, failures: [1m0/3971[0m, gas/s: [1m   316961508[0m[0m
+[1m[32m⇾[0m[0m [1m[1mfuzz: [0melapsed: [1m   4m40s[0m, calls: [1m    401684 (  1382/sec)[0m, seq/s: [1m    13[0m, branches: [1m 12669[0m, corpus: [1m  112[0m, failures: [1m0/4013[0m, gas/s: [1m   327550454[0m[0m
+[1m[32m⇾[0m[0m [1m[1mfuzz: [0melapsed: [1m   4m43s[0m, calls: [1m    405488 (  1266/sec)[0m, seq/s: [1m    12[0m, branches: [1m 12669[0m, corpus: [1m  112[0m, failures: [1m0/4050[0m, gas/s: [1m   298908180[0m[0m
+[1m[32m⇾[0m[0m [1m[1mfuzz: [0melapsed: [1m   4m46s[0m, calls: [1m    409668 (  1393/sec)[0m, seq/s: [1m    13[0m, branches: [1m 12669[0m, corpus: [1m  112[0m, failures: [1m0/4092[0m, gas/s: [1m   306311885[0m[0m
+[1m[32m⇾[0m[0m [1m[1mfuzz: [0melapsed: [1m   4m49s[0m, calls: [1m    413519 (  1282/sec)[0m, seq/s: [1m    12[0m, branches: [1m 12669[0m, corpus: [1m  112[0m, failures: [1m0/4131[0m, gas/s: [1m   279205798[0m[0m
+[1m[32m⇾[0m[0m [1m[1mfuzz: [0melapsed: [1m   4m52s[0m, calls: [1m    417239 (  1239/sec)[0m, seq/s: [1m    11[0m, branches: [1m 12669[0m, corpus: [1m  112[0m, failures: [1m0/4167[0m, gas/s: [1m   282241229[0m[0m
+[1m[32m⇾[0m[0m [1m[1mfuzz: [0melapsed: [1m   4m55s[0m, calls: [1m    420651 (  1136/sec)[0m, seq/s: [1m    11[0m, branches: [1m 12669[0m, corpus: [1m  112[0m, failures: [1m0/4201[0m, gas/s: [1m   261349087[0m[0m
+[1m[32m⇾[0m[0m [1m[1mfuzz: [0melapsed: [1m   4m58s[0m, calls: [1m    424722 (  1356/sec)[0m, seq/s: [1m    14[0m, branches: [1m 12669[0m, corpus: [1m  112[0m, failures: [1m0/4244[0m, gas/s: [1m   306855805[0m[0m
+[1m[32m⇾[0m[0m [1mFuzzer stopped, test results follow below ...[0m
+[1m[32m⇾[0m[0m [1m[1m[32m[PASSED] [0m[0m[1mAssertion Test: FuzzTester.rebalancerVaultUpgradeable_accrueFees(uint256,uint256)[0m[0m
+[1m[32m⇾[0m[0m [1m[1m[32m[PASSED] [0m[0m[1mAssertion Test: FuzzTester.rebalancerVaultUpgradeable_collectFees(uint256,uint256)[0m[0m
+[1m[32m⇾[0m[0m [1m[1m[32m[PASSED] [0m[0m[1mAssertion Test: FuzzTester.rebalancerVaultUpgradeable_collectFees_clamped(uint256,uint256)[0m[0m
+[1m[32m⇾[0m[0m [1m[1m[32m[PASSED] [0m[0m[1mAssertion Test: FuzzTester.rebalancerVaultUpgradeable_deposit(uint256,address)[0m[0m
+[1m[32m⇾[0m[0m [1m[1m[32m[PASSED] [0m[0m[1mAssertion Test: FuzzTester.rebalancerVaultUpgradeable_deposit_clamped(uint256,address)[0m[0m
+[1m[32m⇾[0m[0m [1m[1m[32m[PASSED] [0m[0m[1mAssertion Test: FuzzTester.rebalancerVaultUpgradeable_deposit_smallAmount(uint256,address)[0m[0m
+[1m[32m⇾[0m[0m [1m[1m[32m[PASSED] [0m[0m[1mAssertion Test: FuzzTester.rebalancerVaultUpgradeable_depositToken1(uint256,address)[0m[0m
+[1m[32m⇾[0m[0m [1m[1m[32m[PASSED] [0m[0m[1mAssertion Test: FuzzTester.rebalancerVaultUpgradeable_depositToken1_clamped(uint256,address)[0m[0m
+[1m[32m⇾[0m[0m [1m[1m[32m[PASSED] [0m[0m[1mAssertion Test: FuzzTester.rebalancerVaultUpgradeable_donateETH(uint256)[0m[0m
+[1m[32m⇾[0m[0m [1m[1m[32m[PASSED] [0m[0m[1mAssertion Test: FuzzTester.rebalancerVaultUpgradeable_donateToken0(uint256)[0m[0m
+[1m[32m⇾[0m[0m [1m[1m[32m[PASSED] [0m[0m[1mAssertion Test: FuzzTester.rebalancerVaultUpgradeable_donateToken1(uint256)[0m[0m
+[1m[32m⇾[0m[0m [1m[1m[32m[PASSED] [0m[0m[1mAssertion Test: FuzzTester.rebalancerVaultUpgradeable_mint(uint256,address)[0m[0m
+[1m[32m⇾[0m[0m [1m[1m[32m[PASSED] [0m[0m[1mAssertion Test: FuzzTester.rebalancerVaultUpgradeable_mint_clamped(uint256,address)[0m[0m
+[1m[32m⇾[0m[0m [1m[1m[32m[PASSED] [0m[0m[1mAssertion Test: FuzzTester.rebalancerVaultUpgradeable_rebalance(bool,uint256)[0m[0m
+[1m[32m⇾[0m[0m [1m[1m[32m[PASSED] [0m[0m[1mAssertion Test: FuzzTester.rebalancerVaultUpgradeable_rebalance_clamped(bool,uint256)[0m[0m
+[1m[32m⇾[0m[0m [1m[1m[32m[PASSED] [0m[0m[1mAssertion Test: FuzzTester.rebalancerVaultUpgradeable_redeem(uint256,address,address)[0m[0m
+[1m[32m⇾[0m[0m [1m[1m[32m[PASSED] [0m[0m[1mAssertion Test: FuzzTester.rebalancerVaultUpgradeable_redeem_clamped(uint256,address,address)[0m[0m
+[1m[32m⇾[0m[0m [1m[1m[32m[PASSED] [0m[0m[1mAssertion Test: FuzzTester.rebalancerVaultUpgradeable_redeem_full(address,address)[0m[0m
+[1m[32m⇾[0m[0m [1m[1m[32m[PASSED] [0m[0m[1mAssertion Test: FuzzTester.rebalancerVaultUpgradeable_secondary(uint8,uint256,address)[0m[0m
+[1m[32m⇾[0m[0m [1m[1m[32m[PASSED] [0m[0m[1mAssertion Test: FuzzTester.rebalancerVaultUpgradeable_withdraw(uint256,address,address)[0m[0m
+[1m[32m⇾[0m[0m [1m[1m[32m[PASSED] [0m[0m[1mAssertion Test: FuzzTester.rebalancerVaultUpgradeable_withdraw_clamped(uint256,address,address)[0m[0m
+[1m[32m⇾[0m[0m [1m[1m[32m[PASSED] [0m[0m[1mAssertion Test: FuzzTester.rebalancerVaultUpgradeable_withdraw_full(address,address)[0m[0m
+[1m[32m⇾[0m[0m [1m[1m[32m[PASSED] [0m[0m[1mAssertion Test: FuzzTester.setCurrentActor(uint256)[0m[0m
+[1m[32m⇾[0m[0m [1mTest summary: [1m[32m23[0m[0m test(s) passed, [1m[31m0[0m[0m test(s) failed[0m
+[1m[32m⇾[0m[0m [1mhtml report(s) saved to: fizz_data/corpus_medusa/coverage/coverage_report.html[0m
+[1m[32m⇾[0m[0m [1mlcov report(s) saved to: fizz_data/corpus_medusa/coverage/lcov.info[0m
