@@ -27,23 +27,11 @@ import {
 import {ICLSwapRouter} from "./interfaces/router/ICLSwapRouter.sol";
 import {IDexAdapter} from "./adapters/interfaces/IDexAdapter.sol";
 import {IStrategy} from "./strategies/interfaces/IStrategy.sol";
-
 import {VaultStorageLib} from "./libraries/VaultStorageLib.sol";
 import {OracleLib} from "./libraries/OracleLib.sol";
 import {VaultMath} from "./libraries/VaultMath.sol";
 import {LiquidityAmounts, TickMath} from "./libraries/UniswapV3Math.sol";
 
-/// @title RebalancerVaultUpgradeable
-/// @notice Beacon-proxy-upgradeable ERC4626 concentrated-liquidity vault denominated in
-///         token0. Structural refactor of the monolithic RebalancerVault.sol — identical
-///         external behavior, split across modules:
-///           OracleLib  → TWAP math (single slot0 + observe read per call)
-///           VaultMath  → slippage / optimal-swap / tick math (pure)
-///           IStrategy  → range selection (staticcall; vault re-validates output)
-/// @dev    STORAGE: all custom state lives in the ERC-7201 namespace returned by _s().
-///         Every function that touches state MUST go through _s() — never bare identifiers.
-///         UPGRADEABILITY: implementation constructor calls _disableInitializers(); one
-///         UpgradeableBeacon per deployment; one BeaconProxy per (pool, strategy) vault.
 contract RebalancerVaultUpgradeable is
     Initializable,
     ERC20Upgradeable,
@@ -124,8 +112,10 @@ contract RebalancerVaultUpgradeable is
     error PriceDeviatedFromTwap();
     error NothingToMint();
     error SameBlock();
-
-    // ─── Init params ────────────────────────────────────────────────────────────
+    error Paused();
+    error TwapTooShort();
+    error DeviationOutOfRange();
+    error SlippageTooHigh();
 
     /// @notice Parameters consumed once by {initialize}. Field order is ABI-stable
     ///         (factory encodes against this struct — do not reorder).
@@ -143,8 +133,6 @@ contract RebalancerVaultUpgradeable is
         string symbol;
     }
 
-    // ─── Modifiers ──────────────────────────────────────────────────────────────
-
     modifier onlyOwner() {
         if (msg.sender != _s().owner) revert NotOwner();
         _;
@@ -156,7 +144,7 @@ contract RebalancerVaultUpgradeable is
     }
 
     modifier whenNotPaused() {
-        require(!_s().paused, "Vault: paused");
+        if (_s().paused) revert Paused();
         _;
     }
 
@@ -165,30 +153,14 @@ contract RebalancerVaultUpgradeable is
         _;
     }
 
-    // ─── Constructor + initializer ───────────────────────────────────────────────
-
-    /// @dev Prevents the implementation contract itself from being initialized.
     constructor() {
         _disableInitializers();
     }
 
     /// @notice One-time initializer replacing the monolith constructor.
     function initialize(InitParams calldata p) external initializer {
-        if (
-            p.owner == address(0) ||
-            p.operator == address(0) ||
-            p.guardian == address(0) ||
-            p.pool == address(0) ||
-            p.positionManager == address(0) ||
-            p.swapRouter == address(0) ||
-            p.strategy == address(0) ||
-            p.dexAdapter == address(0) ||
-            p.feeRecipient == address(0)
-        ) revert ZeroAddress();
-
         __ERC20_init(p.name, p.symbol);
         __ERC4626_init(IERC20(ICLPool(p.pool).token0()));
-        // ReentrancyGuardTransient uses transient storage; no __init required.
 
         VaultStorageLib.VaultStorage storage s = _s();
 
@@ -202,12 +174,10 @@ contract RebalancerVaultUpgradeable is
         s.dexAdapter = p.dexAdapter;
         s.feeRecipient = p.feeRecipient;
 
-        address t0 = ICLPool(p.pool).token0();
-        address t1 = ICLPool(p.pool).token1();
-        s.token0 = t0;
-        s.token1 = t1;
-        s.decimals0 = _safeDecimals(t0);
-        s.decimals1 = _safeDecimals(t1);
+        s.token0 = ICLPool(p.pool).token0();
+        s.token1 = ICLPool(p.pool).token1();
+        s.decimals0 = _safeDecimals(s.token0);
+        s.decimals1 = _safeDecimals(s.token1);
 
         s.performanceFeeBps = 1000;
         s.twapSeconds = 300;
@@ -215,13 +185,9 @@ contract RebalancerVaultUpgradeable is
         s.slippageBps = 50;
     }
 
-    // ─── Storage accessor ────────────────────────────────────────────────────────
-
     function _s() internal pure returns (VaultStorageLib.VaultStorage storage) {
         return VaultStorageLib.get();
     }
-
-    // ─── Public getters ─────────────────────────────────────────────────────────
 
     function owner() public view returns (address) {
         return _s().owner;
@@ -405,9 +371,6 @@ contract RebalancerVaultUpgradeable is
         return convertToAssets(shares);
     }
 
-    // ─── ERC4626 mutating overrides ──────────────────────────────────────────────
-
-    /// @inheritdoc ERC4626Upgradeable
     function deposit(
         uint256 assets,
         address receiver
@@ -418,7 +381,7 @@ contract RebalancerVaultUpgradeable is
         _requireSpotNearTwap();
 
         VaultStorageLib.VaultStorage storage s = _s();
-        s.lastDepositBlock[msg.sender] = block.number;
+        s.lastDepositBlock[receiver] = block.number;
 
         uint256 totalValBefore = _totalVaultValueInToken0();
         uint256 supply = totalSupply();
@@ -455,7 +418,7 @@ contract RebalancerVaultUpgradeable is
         _requireSpotNearTwap();
 
         VaultStorageLib.VaultStorage storage s = _s();
-        s.lastDepositBlock[msg.sender] = block.number;
+        s.lastDepositBlock[receiver] = block.number;
 
         uint256 supply = totalSupply();
         uint256 ta = totalAssets();
@@ -493,7 +456,34 @@ contract RebalancerVaultUpgradeable is
 
         uint256 supply = totalSupply();
         (uint256 min0, uint256 min1) = _computeRemoveSlippage(shares, supply);
-        _removeProportionalLiquidity(shares, supply, min0, min1);
+
+        uint256 idleBefore0 = IERC20(s.token0).balanceOf(address(this));
+        uint256 idleBefore1 = IERC20(s.token1).balanceOf(address(this));
+
+        (uint256 p0, uint256 p1) = _removeProportionalLiquidity(
+            shares,
+            supply,
+            min0,
+            min1
+        );
+
+        // _removeProportionalLiquidity collects the position's ENTIRE accrued
+        // fees (amount0Max/amount1Max == type(uint128).max). Charge the
+        // performance fee on that fee portion (swept - principal), exactly as
+        // collectFees()/rebalance() do; the tokens are already in the vault.
+        uint256 swept0 = IERC20(s.token0).balanceOf(address(this)) -
+            idleBefore0;
+        uint256 swept1 = IERC20(s.token1).balanceOf(address(this)) -
+            idleBefore1;
+        (uint256 fee0, uint256 fee1) = _deductPerformanceFee(
+            swept0 - p0,
+            swept1 - p1
+        );
+        s.totalFees0Earned += fee0;
+        s.totalFees1Earned += fee1;
+        if (fee0 > 0 || fee1 > 0)
+            emit FeesCollected(fee0, fee1, s.feeRecipient);
+
         _burn(owner_, shares);
 
         uint256 idle0 = IERC20(s.token0).balanceOf(address(this));
@@ -545,13 +535,39 @@ contract RebalancerVaultUpgradeable is
         uint256 idleBefore1 = IERC20(s.token1).balanceOf(address(this));
 
         (uint256 min0, uint256 min1) = _computeRemoveSlippage(shares, supply);
-        _removeProportionalLiquidity(shares, supply, min0, min1);
+        // _removeProportionalLiquidity collects the position's ENTIRE accrued
+        // fees (amount0Max/amount1Max == type(uint128).max), not just this
+        // redeemer's share. Separate the proportional principal (p0/p1) from the
+        // swept fees so the redeemer is credited only their pro-rata fee share;
+        // the remaining fees stay idle and accrue to all holders.
+        (uint256 p0, uint256 p1) = _removeProportionalLiquidity(
+            shares,
+            supply,
+            min0,
+            min1
+        );
 
-        uint256 freed0 = IERC20(s.token0).balanceOf(address(this)) -
+        uint256 swept0 = IERC20(s.token0).balanceOf(address(this)) -
             idleBefore0;
-        uint256 freed1 = IERC20(s.token1).balanceOf(address(this)) -
+        uint256 swept1 = IERC20(s.token1).balanceOf(address(this)) -
             idleBefore1;
 
+        (uint256 fee0, uint256 fee1) = _deductPerformanceFee(
+            swept0 - p0,
+            swept1 - p1
+        );
+        s.totalFees0Earned += fee0;
+        s.totalFees1Earned += fee1;
+        swept0 -= fee0;
+        swept1 -= fee1;
+
+        //specific user share of principal+fees from position, rounded down to avoid over-crediting
+        uint256 freed0 = p0 +
+            Math.mulDiv(swept0 - p0, shares, supply, Math.Rounding.Floor);
+        uint256 freed1 = p1 +
+            Math.mulDiv(swept1 - p1, shares, supply, Math.Rounding.Floor);
+
+        //specific user share of principal from vault, rounded down to avoid over-crediting
         uint256 idleShare0 = Math.mulDiv(
             idleBefore0,
             shares,
@@ -582,9 +598,6 @@ contract RebalancerVaultUpgradeable is
         emit Withdraw(msg.sender, receiver, owner_, assets, shares);
     }
 
-    // ─── Token1 deposit ─────────────────────────────────────────────────────────
-
-    /// @notice Preview shares for a token1 deposit (uses TWAP price).
     function previewDepositToken1(
         uint256 token1Amount
     ) public view returns (uint256) {
@@ -652,9 +665,6 @@ contract RebalancerVaultUpgradeable is
         emit Token1Deposited(msg.sender, receiver, token1Amount, shares);
     }
 
-    // ─── Position lifecycle ──────────────────────────────────────────────────────
-
-    /// @notice Deposit the vault's idle balances into a new CL position.
     function initializePosition(
         int24 tickLower,
         int24 tickUpper,
@@ -667,7 +677,6 @@ contract RebalancerVaultUpgradeable is
         if (s.tokenId != 0) revert AlreadyInitialized();
         if (tickLower >= tickUpper) revert InvalidRange();
 
-        // Adapter mint performs forceApprove(token0/1, positionManager) in vault context.
         (uint256 newTokenId, uint128 newLiquidity, , ) = _mintPosition(
             IDexAdapter.MintArgs({
                 positionManager: s.positionManager,
@@ -691,7 +700,6 @@ contract RebalancerVaultUpgradeable is
         emit Rebalanced(0, newTokenId, tickLower, tickUpper, newLiquidity);
     }
 
-    /// @notice Collect accrued LP fees, deduct performance fee, and leave net in the vault.
     function collectFees(
         uint256 amount0Min,
         uint256 amount1Min
@@ -706,7 +714,6 @@ contract RebalancerVaultUpgradeable is
         VaultStorageLib.VaultStorage storage s = _s();
         uint256 currentTokenId = s.tokenId;
 
-        // Zero-liquidity decrease to flush feeGrowthInside into tokensOwed.
         _decreaseLiquidity(
             IDexAdapter.DecreaseArgs({
                 positionManager: s.positionManager,
@@ -751,12 +758,6 @@ contract RebalancerVaultUpgradeable is
             emit FeesCollected(fee0, fee1, s.feeRecipient);
     }
 
-    /// @notice Remove all liquidity, collect fees, optionally swap for ratio, then re-mint
-    ///         at a new TWAP-anchored range computed by the bound strategy module.
-    /// @dev    The new range is anchored on the TWAP tick — not spot — to prevent a
-    ///         flash-loan from forcing the vault into an attacker-chosen position.
-    ///         All slippage floors (remove, swap, mint) are computed on-chain; the keeper
-    ///         cannot pass zero min-amounts.
     function rebalance(
         bool swapZeroForOne,
         uint256 swapAmount
@@ -766,11 +767,8 @@ contract RebalancerVaultUpgradeable is
         VaultStorageLib.VaultStorage storage s = _s();
         uint256 oldTokenId = s.tokenId;
 
-        // Steps 1–4: remove liquidity, isolate + deduct fees, collect, burn.
-        // Extracted to avoid stack-too-deep with the mint locals below.
         _rebalanceRemoveFeeCollectBurn(oldTokenId, s);
 
-        // Step 5: optional ratio-alignment swap — TWAP-enforced slippage floor.
         if (swapAmount > 0) {
             _executeSwap(
                 swapZeroForOne,
@@ -784,13 +782,9 @@ contract RebalancerVaultUpgradeable is
             );
         }
 
-        // Steps 6–7: compute new TWAP-anchored range and mint.
         _rebalanceMintNew(s, oldTokenId);
     }
 
-    /// @dev Steps 1–4 of rebalance, extracted to reduce stack depth.
-    ///      Snapshot owed before decrease, decrease, re-read owed, isolate fees,
-    ///      deduct performance fee, collect, burn.
     function _rebalanceRemoveFeeCollectBurn(
         uint256 oldTokenId,
         VaultStorageLib.VaultStorage storage s
@@ -829,8 +823,6 @@ contract RebalancerVaultUpgradeable is
             );
         }
 
-        // Re-read after decrease: tokensOwed = all accumulated fees + principal.
-        // Fee isolation: subtract only principal to get all fees (pre-existing + newly flushed).
         (
             ,
             ,
@@ -844,15 +836,6 @@ contract RebalancerVaultUpgradeable is
         uint128 feesOwed0 = tokensOwed0 - uint128(principal0);
         uint128 feesOwed1 = tokensOwed1 - uint128(principal1);
 
-        (uint256 fee0, uint256 fee1) = _deductPerformanceFee(
-            uint256(feesOwed0),
-            uint256(feesOwed1)
-        );
-        s.totalFees0Earned += fee0;
-        s.totalFees1Earned += fee1;
-        if (fee0 > 0 || fee1 > 0)
-            emit FeesCollected(fee0, fee1, s.feeRecipient);
-
         _collect(
             IDexAdapter.CollectArgs({
                 positionManager: s.positionManager,
@@ -863,10 +846,18 @@ contract RebalancerVaultUpgradeable is
             })
         );
 
+        (uint256 fee0, uint256 fee1) = _deductPerformanceFee(
+            uint256(feesOwed0),
+            uint256(feesOwed1)
+        );
+        s.totalFees0Earned += fee0;
+        s.totalFees1Earned += fee1;
+        if (fee0 > 0 || fee1 > 0)
+            emit FeesCollected(fee0, fee1, s.feeRecipient);
+
         _burnPosition(oldTokenId);
     }
 
-    /// @dev Steps 6–7 of rebalance: compute TWAP-anchored range, mint new position, commit.
     function _rebalanceMintNew(
         VaultStorageLib.VaultStorage storage s,
         uint256 oldTokenId
@@ -999,17 +990,17 @@ contract RebalancerVaultUpgradeable is
     }
 
     function setTwapSeconds(uint32 seconds_) external onlyOwner {
-        require(seconds_ >= 60, "Vault: twap too short");
+        if (seconds_ < 60) revert TwapTooShort();
         _s().twapSeconds = seconds_;
     }
 
     function setMaxTwapDeviationTicks(int24 ticks) external onlyOwner {
-        require(ticks > 0 && ticks <= 1000, "Vault: deviation out of range");
+        if (ticks <= 0 || ticks > 1000) revert DeviationOutOfRange();
         _s().maxTwapDeviationTicks = ticks;
     }
 
     function setSlippageBps(uint256 bps) external onlyOwner {
-        require(bps <= 500, "Vault: slippage too high");
+        if (bps > 500) revert SlippageTooHigh();
         _s().slippageBps = bps;
     }
 
@@ -1119,23 +1110,25 @@ contract RebalancerVaultUpgradeable is
 
     // ─── Private: liquidity removal ──────────────────────────────────────────────
 
+    /// @return principal0 token0 principal returned by decreaseLiquidity (excludes fees)
+    /// @return principal1 token1 principal returned by decreaseLiquidity (excludes fees)
     function _removeProportionalLiquidity(
         uint256 shares,
         uint256 supply,
         uint256 min0,
         uint256 min1
-    ) private {
+    ) private returns (uint256 principal0, uint256 principal1) {
         VaultStorageLib.VaultStorage storage s = _s();
-        if (s.tokenId == 0) return;
+        if (s.tokenId == 0) return (0, 0);
         (, , uint128 liq, , , , ) = _adapterPositions(s.tokenId);
-        if (liq == 0) return;
+        if (liq == 0) return (0, 0);
 
         uint128 toRemove = uint128(
             Math.mulDiv(uint256(liq), shares, supply, Math.Rounding.Ceil)
         );
-        if (toRemove == 0) return;
+        if (toRemove == 0) return (0, 0);
 
-        _decreaseLiquidity(
+        (principal0, principal1) = _decreaseLiquidity(
             IDexAdapter.DecreaseArgs({
                 positionManager: s.positionManager,
                 tokenId: s.tokenId,

@@ -73,8 +73,10 @@ contract CLDexAdapter is IDexAdapter {
             uint256 amount1
         )
     {
+        
         IERC20(p.token0).forceApprove(p.positionManager, p.amount0Desired);
         IERC20(p.token1).forceApprove(p.positionManager, p.amount1Desired);
+
         return
             INonfungiblePositionManager(p.positionManager).mint(
                 INonfungiblePositionManager.MintParams({

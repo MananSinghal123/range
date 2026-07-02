@@ -35,8 +35,7 @@
   {
     "inputs": [
       { "internalType": "bool",    "name": "swapZeroForOne", "type": "bool"    },
-      { "internalType": "uint256", "name": "swapAmount",     "type": "uint256" },
-      { "internalType": "uint8",   "name": "strategy",      "type": "uint8"   }
+      { "internalType": "uint256", "name": "swapAmount",     "type": "uint256" }
     ],
     "name": "rebalance",
     "outputs": [],

@@ -60,6 +60,16 @@ export function formatAddress(address: string): string {
   return `${address.slice(0, 6)}…${address.slice(-4)}`;
 }
 
+const MEZO_MAINNET_ID = 31612;
+
+export function explorerTxUrl(chainId: number, txHash: string): string {
+  const base =
+    chainId === MEZO_MAINNET_ID
+      ? "https://explorer.mezo.org"
+      : "https://explorer.test.mezo.org";
+  return `${base}/tx/${txHash}`;
+}
+
 export function formatBps(bps: bigint | number): string {
   const n = typeof bps === "bigint" ? Number(bps) : bps;
   return `${(n / 100).toFixed(2)}%`;

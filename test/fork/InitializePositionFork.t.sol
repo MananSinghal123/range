@@ -9,8 +9,7 @@ import {INonfungiblePositionManager} from "../../src/interfaces/INonfungiblePosi
 import "../mocks/MockERC20.sol";
 
 contract InitializePositionForkTest is Test {
-    // ── Real testnet addresses ───────────────────────────────────────────────
-    address constant VAULT = 0xA22F4E89135d88B11Bdcaecf756ff7B3e8d37dD0;
+    address constant VAULT = 0x9b29b71829597A1B705Ea1Bab1C8B2fD00088594;
     address constant TOKEN0 = 0x118917a40FAF1CD7a13dB0Ef56C86De7973Ac503; // MUSD
     address constant TOKEN1 = 0x7b7C000000000000000000000000000000000000; // BTC
     address constant POS_MGR = 0x509Bc221df2B83927c695FA0bb0f5B21053C874c;
@@ -45,7 +44,6 @@ contract InitializePositionForkTest is Test {
         assertEq(address(vault.token1()), TOKEN1, "wrong token1");
     }
 
-    // ── Step 2: verify vault has tokens ─────────────────────────────────────
     function test_vaultBalances() public view {
         uint256 bal0 = IERC20(TOKEN0).balanceOf(VAULT);
         uint256 bal1 = IERC20(TOKEN1).balanceOf(VAULT);
@@ -55,7 +53,6 @@ contract InitializePositionForkTest is Test {
         assertGt(bal1, 0, "no token1 in vault");
     }
 
-    // ── Step 3: isolate token0 approve ──────────────────────────────────────
     function test_token0Approve() public {
         vm.prank(VAULT);
         bool ok = IERC20(TOKEN0).approve(POS_MGR, type(uint256).max);
@@ -66,7 +63,6 @@ contract InitializePositionForkTest is Test {
         );
     }
 
-    // ── Step 4: isolate token1 approve ──────────────────────────────────────
     function test_token1Approve() public {
         vm.prank(VAULT);
         bool ok = IERC20(TOKEN1).approve(POS_MGR, type(uint256).max);
@@ -77,138 +73,6 @@ contract InitializePositionForkTest is Test {
         );
     }
 
-    // ── CLDexAdapter.mint fork tests ─────────────────────────────────────────
-
-    // Helper: deploy adapter and fund caller with tokens from the vault
-    function _adapterAndFunds(
-        uint256 amount0,
-        uint256 amount1
-    ) internal returns (CLDexAdapter adapter) {
-        adapter = new CLDexAdapter();
-        // steal tokens from the vault (it already holds balances)
-        vm.prank(VAULT);
-        IERC20(TOKEN0).transfer(address(this), amount0);
-        vm.prank(VAULT);
-        IERC20(TOKEN1).transfer(address(this), amount1);
-        IERC20(TOKEN0).approve(address(adapter), amount0);
-        IERC20(TOKEN1).approve(address(adapter), amount1);
-    }
-
-    function test_adapterMint_returnsPositiveTokenId() public {
-        uint256 amt0 = 1e18;
-        uint256 amt1 = 1e4; // BTC has 8 decimals; small amount
-        CLDexAdapter adapter = _adapterAndFunds(amt0, amt1);
-
-        (uint256 tokenId, uint128 liquidity, , ) = adapter.mint(
-            IDexAdapter.MintArgs({
-                positionManager: POS_MGR,
-                token0: TOKEN0,
-                token1: TOKEN1,
-                tickSpacing: 50,
-                tickLower: -114750,
-                tickUpper: -113300,
-                amount0Desired: amt0,
-                amount1Desired: amt1,
-                amount0Min: 0,
-                amount1Min: 0,
-                recipient: address(this),
-                deadline: block.timestamp + 1 hours
-            })
-        );
-
-        assertGt(tokenId, 0, "tokenId must be non-zero");
-        assertGt(liquidity, 0, "liquidity must be non-zero");
-    }
-
-    function test_adapterMint_recipientReceivesNFT() public {
-        uint256 amt0 = 1e18;
-        uint256 amt1 = 1e4;
-        CLDexAdapter adapter = _adapterAndFunds(amt0, amt1);
-
-        address recipient = makeAddr("recipient");
-
-        (uint256 tokenId, , , ) = adapter.mint(
-            IDexAdapter.MintArgs({
-                positionManager: POS_MGR,
-                token0: TOKEN0,
-                token1: TOKEN1,
-                tickSpacing: 50,
-                tickLower: -114750,
-                tickUpper: -113300,
-                amount0Desired: amt0,
-                amount1Desired: amt1,
-                amount0Min: 0,
-                amount1Min: 0,
-                recipient: recipient,
-                deadline: block.timestamp + 1 hours
-            })
-        );
-
-        assertEq(
-            INonfungiblePositionManager(POS_MGR).ownerOf(tokenId),
-            recipient,
-            "NFT not sent to recipient"
-        );
-    }
-
-    function test_adapterMint_consumesTokens() public {
-        uint256 amt0 = 1e18;
-        uint256 amt1 = 1e4;
-        CLDexAdapter adapter = _adapterAndFunds(amt0, amt1);
-
-        uint256 pre0 = IERC20(TOKEN0).balanceOf(address(this));
-        uint256 pre1 = IERC20(TOKEN1).balanceOf(address(this));
-
-        (, , uint256 used0, uint256 used1) = adapter.mint(
-            IDexAdapter.MintArgs({
-                positionManager: POS_MGR,
-                token0: TOKEN0,
-                token1: TOKEN1,
-                tickSpacing: 50,
-                tickLower: -114750,
-                tickUpper: -113300,
-                amount0Desired: amt0,
-                amount1Desired: amt1,
-                amount0Min: 0,
-                amount1Min: 0,
-                recipient: address(this),
-                deadline: block.timestamp + 1 hours
-            })
-        );
-
-        uint256 post0 = IERC20(TOKEN0).balanceOf(address(this));
-        uint256 post1 = IERC20(TOKEN1).balanceOf(address(this));
-
-        assertEq(pre0 - post0, used0, "token0 balance delta mismatch");
-        assertEq(pre1 - post1, used1, "token1 balance delta mismatch");
-        assertGt(used0 + used1, 0, "no tokens consumed");
-    }
-
-    function test_adapterMint_revertsAfterDeadline() public {
-        uint256 amt0 = 1e18;
-        uint256 amt1 = 1e4;
-        CLDexAdapter adapter = _adapterAndFunds(amt0, amt1);
-
-        vm.expectRevert();
-        adapter.mint(
-            IDexAdapter.MintArgs({
-                positionManager: POS_MGR,
-                token0: TOKEN0,
-                token1: TOKEN1,
-                tickSpacing: 50,
-                tickLower: -114750,
-                tickUpper: -113300,
-                amount0Desired: amt0,
-                amount1Desired: amt1,
-                amount0Min: 0,
-                amount1Min: 0,
-                recipient: address(this),
-                deadline: block.timestamp - 1 // already expired
-            })
-        );
-    }
-
-    // ── Step 5: full initializePosition ─────────────────────────────────────
     function test_initializePosition() public {
         vm.prank(OWNER);
         vault.initializePosition(

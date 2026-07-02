@@ -11,28 +11,26 @@ import {
 import { useVaultEvents } from "@/hooks/useVaultEvents";
 import { computeAPY } from "@/lib/utils";
 
-export function useVaultPage() {
+export function useVaultPage(vaultAddress: `0x${string}`) {
   const { isConnected } = useAccount();
 
-  const vault = useVaultState();
-  const pool = usePoolState(vault.initialized);
-  const metrics = useVaultMetrics(vault.initialized);
+  const vault = useVaultState(vaultAddress);
+  const pool = usePoolState(vaultAddress, vault.initialized);
+  const metrics = useVaultMetrics(vaultAddress, vault.initialized);
   const tokens = useTokenInfo(vault.token0Address, vault.token1Address);
   const user = useUserPosition(
+    vaultAddress,
     vault.token0Address,
     vault.token1Address,
     vault.decimals0,
     vault.decimals1,
   );
-  const events = useVaultEvents();
+  const events = useVaultEvents(vaultAddress);
 
   const sym0 = tokens.symbol0 ?? "MUSD";
   const sym1 = tokens.symbol1 ?? "BTC";
   const d0 = vault.decimals0 ?? 18;
   const d1 = vault.decimals1 ?? 8;
-
-  console.log("Vault token symbol0:", tokens.symbol0);
-  console.log("Vault token d0:", vault.decimals0);
 
   const apy = computeAPY(
     metrics.fees0Earned ?? events.totalFee0,

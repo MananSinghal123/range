@@ -40,7 +40,7 @@ function RangeBar({
   const currentPct = Math.max(0, Math.min(100, pct(currentTick)));
 
   const inRange = !isOutOfRange;
-  const accent = inRange ? "var(--green)" : "#DC2626";
+  const accent = inRange ? "var(--green)" : "var(--error)";
   const fill = inRange ? "rgba(22,163,74,0.12)" : "rgba(220,38,38,0.12)";
 
   return (
@@ -111,11 +111,9 @@ export function PriceRangeCard({
 }: PriceRangeCardProps) {
   if (!initialized) {
     return (
-      <div
-        className="rounded-xl p-4"
-        style={{ background: "var(--surface)", border: "1px solid var(--border)" }}
-      >
-        <p className="text-sm" style={{ color: "var(--text-2)" }}>
+      <div className="card p-5">
+        <span className="label">Price Range</span>
+        <p className="text-sm mt-2" style={{ color: "var(--text-2)" }}>
           Position not yet opened.
         </p>
       </div>
@@ -125,20 +123,17 @@ export function PriceRangeCard({
   const earning = isOutOfRange === false;
 
   return (
-    <div
-      className="rounded-xl p-4 space-y-3"
-      style={{ background: "var(--surface)", border: "1px solid var(--border)" }}
-    >
+    <div className="card p-5 space-y-3.5 animate-in">
       <div className="flex items-center justify-between">
         <span className="label">Price Range</span>
         {isOutOfRange !== undefined && (
           <span
             className="flex items-center gap-1.5 text-xs font-medium"
-            style={{ color: earning ? "var(--green)" : "#DC2626" }}
+            style={{ color: earning ? "var(--green)" : "var(--error)" }}
           >
             <span
               className="w-1.5 h-1.5 rounded-full"
-              style={{ background: earning ? "var(--green)" : "#DC2626" }}
+              style={{ background: earning ? "var(--green)" : "var(--error)" }}
             />
             {earning ? "Earning fees" : "Out of range"}
           </span>

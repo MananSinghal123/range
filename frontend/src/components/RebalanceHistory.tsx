@@ -1,7 +1,8 @@
 "use client";
 
 import { useChainId } from "wagmi";
-import { tickToPrice, formatPrice } from "@/lib/utils";
+import { ArrowRight } from "lucide-react";
+import { tickToPrice, formatPrice, explorerTxUrl } from "@/lib/utils";
 import type { RebalanceEvent } from "@/hooks/useVaultEvents";
 
 interface Props {
@@ -22,13 +23,6 @@ function relativeTime(ts: number): string {
   return new Date(ts * 1000).toLocaleDateString("en-US", { month: "short", day: "numeric" });
 }
 
-function explorerUrl(chainId: number, txHash: string): string {
-  const base = chainId === 31612
-    ? "https://explorer.mezo.org"
-    : "https://explorer.test.mezo.org";
-  return `${base}/tx/${txHash}`;
-}
-
 function formatAddr(hash: string): string {
   return `${hash.slice(0, 8)}…${hash.slice(-6)}`;
 }
@@ -44,15 +38,17 @@ export function RebalanceHistory({
   const chainId = useChainId();
 
   return (
-    <div
-      className="rounded-xl overflow-hidden"
-      style={{ border: "1px solid var(--border)", background: "#fff" }}
-    >
+    <div className="card overflow-hidden animate-in">
       <div
-        className="px-4 py-3"
-        style={{ borderBottom: "1px solid var(--border)", background: "var(--surface)" }}
+        className="px-4 py-3.5 flex items-center justify-between"
+        style={{ borderBottom: "1px solid var(--border)" }}
       >
         <span className="label">Rebalance History</span>
+        {!isLoading && rebalances.length > 0 && (
+          <span className="label" style={{ color: "var(--text-3)" }}>
+            {rebalances.length}
+          </span>
+        )}
       </div>
 
       {isLoading ? (
@@ -80,31 +76,36 @@ export function RebalanceHistory({
             const lowerPrice = tickToPrice(ev.tickLower, decimals0, decimals1);
             const upperPrice = tickToPrice(ev.tickUpper, decimals0, decimals1);
             return (
-              <div key={i} className="px-4 py-3 flex items-center justify-between gap-3">
+              <div
+                key={i}
+                className="px-4 py-3.5 flex items-center justify-between gap-3 transition-colors"
+                onMouseEnter={(e) => (e.currentTarget.style.background = "var(--surface)")}
+                onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
+              >
                 <div className="min-w-0">
-                  <p className="mono text-xs" style={{ color: "var(--text)" }}>
+                  <p
+                    className="mono text-[13px] font-medium flex items-center gap-1.5"
+                    style={{ color: "var(--text)" }}
+                  >
                     {formatPrice(lowerPrice)}
-                    <span style={{ color: "var(--text-3)" }}> → </span>
+                    <ArrowRight className="w-3 h-3 flex-shrink-0" style={{ color: "var(--text-3)" }} />
                     {formatPrice(upperPrice)}
                   </p>
-                  <p className="label mt-0.5" style={{ color: "var(--text-3)" }}>
+                  <p className="label mt-1" style={{ color: "var(--text-3)" }}>
                     {symbol1}/{symbol0}
                   </p>
                 </div>
 
                 <div className="text-right flex-shrink-0">
                   <a
-                    href={explorerUrl(chainId, ev.txHash)}
+                    href={explorerTxUrl(chainId, ev.txHash)}
                     target="_blank"
                     rel="noreferrer"
-                    className="mono text-xs transition-colors"
-                    style={{ color: "var(--red)" }}
-                    onMouseEnter={(e) => (e.currentTarget.style.color = "var(--red-dark)")}
-                    onMouseLeave={(e) => (e.currentTarget.style.color = "var(--red)")}
+                    className="tap link-red mono text-xs"
                   >
                     {formatAddr(ev.txHash)}
                   </a>
-                  <p className="label mt-0.5" style={{ color: "var(--text-3)" }}>
+                  <p className="label mt-1" style={{ color: "var(--text-3)" }}>
                     {ev.timestamp > 0 ? relativeTime(ev.timestamp) : "—"}
                   </p>
                 </div>

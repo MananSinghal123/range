@@ -9,6 +9,21 @@ An automated concentrated-liquidity rebalancing vault for Mezo's Uniswap V3-comp
 
 Built for the [Mezo DEX Automated LP Rebalancing Vault Bounty](https://coda.io/d/Mezo-Community-Resources_d7Ee5YHYoEI/Bounty-Automated-LP-Rebalancing-Vault-for-Mezo-DEX_suo_otcs#_luPM-Uue).
 
+## Deployed Contracts (Mezo Testnet)
+
+| Contract         | Address                                      |
+| ---------------- | -------------------------------------------- |
+| Implementation   | `0x69DE1125e5b3fbdD5e64A3F47803AF761c2e7699` |
+| CLDexAdapter     | `0x4403297D0Fbc68B5643418dEe4b2A7606A3fEb16` |
+| VaultLens        | `0x96F18Ee1aF466981C50b1E76D7604a652b451Cd0` |
+| VaultFactory     | `0x5260ead0f831040Fb14901DDAD758c0110fd3939` |
+| Strategy Tight   | `0x79f1E677C3ba8481b7f5B676EaB606AEa7dA8eD5` |
+| Strategy Medium  | `0x4f562D8e199a02363a7f4663027CdEEFfB395686` |
+| Strategy Wide    | `0x07181Dc9E7538E5CA841B54819a354F3A2900EF9` |
+| Vault MUSD/BTC Tight  | `0x9b29b71829597A1B705Ea1Bab1C8B2fD00088594` |
+| Vault MUSD/BTC Medium | `0x3f92984091B71862F848452aE49943060C3Fac1A` |
+| Vault MUSD/BTC Wide   | `0x4b192b5f56fe5066a8B44dAa2376bE85073f3a3b` |
+
 ## Background
 
 Uniswap V3-style concentrated liquidity lets LPs earn higher fees by concentrating capital in a narrow price range, but once the price drifts outside that range the position earns nothing. Retail LPs lack the tools to monitor positions around the clock.

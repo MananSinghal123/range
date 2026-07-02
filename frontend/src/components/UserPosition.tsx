@@ -2,9 +2,10 @@
 
 import { formatTokenAmount } from "@/lib/utils";
 import { useReadContract } from "wagmi";
-import { VAULT_ADDRESS, VAULT_ABI } from "@/lib/contracts";
+import { VAULT_ABI } from "@/lib/contracts";
 
 interface Props {
+  vaultAddress: `0x${string}`;
   shares?: bigint;
   symbol0?: string;
   decimals0?: number;
@@ -12,6 +13,7 @@ interface Props {
 }
 
 export function UserPosition({
+  vaultAddress,
   shares,
   symbol0 = "MUSD",
   decimals0 = 18,
@@ -20,31 +22,33 @@ export function UserPosition({
   const hasShares = shares !== undefined && shares > BigInt(0);
 
   const { data: assetValue } = useReadContract({
-    address: VAULT_ADDRESS,
+    address: vaultAddress,
     abi: VAULT_ABI,
     functionName: "convertToAssets",
     args: hasShares ? [shares] : undefined,
-    query: { enabled: hasShares, refetchInterval: 10_000 },
+    query: { enabled: hasShares && !!vaultAddress, refetchInterval: 10_000 },
   });
 
   if (!isConnected || !hasShares) return null;
 
   return (
     <div
-      className="rounded-xl p-4 space-y-3"
+      className="rounded-[20px] p-5 space-y-3 animate-in"
       style={{
-        background: "var(--red-bg)",
+        background:
+          "linear-gradient(155deg, var(--red-bg) 0%, #fff 70%)",
         border: "1px solid var(--red-border)",
+        boxShadow: "var(--shadow-glow)",
       }}
     >
       <span className="label" style={{ color: "var(--red)" }}>
         Your Deposit
       </span>
 
-      <div className="flex items-baseline justify-between">
-        <div>
+      <div className="flex items-baseline justify-between gap-3">
+        <div className="min-w-0">
           <p
-            className="mono text-2xl font-semibold"
+            className="mono text-[26px] leading-none font-bold truncate"
             style={{ color: "var(--text)" }}
           >
             {assetValue !== undefined

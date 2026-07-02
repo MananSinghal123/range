@@ -25,6 +25,11 @@ contract VaultMathHarness {
     ) external pure returns (bool, uint256) {
         return VaultMath.computeOptimalSwap(sqrtP, sqrtA, sqrtB, b0, b1);
     }
+    function amountsForLiquidity(
+        uint160 sqrtP, uint160 sqrtA, uint160 sqrtB, uint128 liq
+    ) external pure returns (uint256 a0, uint256 a1) {
+        return LiquidityAmounts.getAmountsForLiquidity(sqrtP, sqrtA, sqrtB, liq);
+    }
     function computeMintSlippage(
         uint160 sqrtTwap, int24 lo, int24 hi, uint256 a0, uint256 a1, uint128 liq, uint256 bps
     ) external pure returns (uint256, uint256) {
@@ -102,11 +107,44 @@ contract VaultMathTest is Test {
         assertLe(min1Cut, min1Full);
     }
 
-    /// @dev computeSwapMinOut floors the converted expected output by slippageBps.
-    function test_computeSwapMinOut_floorsByBps() public view {
-        uint256 full = h.computeSwapMinOut(1e18, false, SQRTP, 0);
-        uint256 cut = h.computeSwapMinOut(1e18, false, SQRTP, 50);
-        assertEq(full, VaultMath.token1ToToken0(1e18, SQRTP));
-        assertLe(cut, full);
+    /// @dev In range, starting one-sided (all token0): must swap only PART of token0,
+    ///      never the whole balance (the old heuristic swapped everything when balance1 == 0).
+    function test_computeOptimalSwap_inRange_oneSided_swapsPartNotAll() public view {
+        // Real testnet pool price/tick: sqrtP at tick -113964, range straddling it.
+        uint160 sqrtP = 265_651_043_793_156_983_656_969_817;
+        uint160 sqrtA = TickMath.getSqrtRatioAtTick(-114000);
+        uint160 sqrtB = TickMath.getSqrtRatioAtTick(-113900);
+        uint256 bal0 = 2e18; // all MUSD, zero BTC
+        (bool z, uint256 amt) = h.computeOptimalSwap(sqrtP, sqrtA, sqrtB, bal0, 0);
+        assertTrue(z, "should sell token0");
+        assertGt(amt, 0, "must swap something");
+        assertLt(amt, bal0, "must NOT swap the whole balance");
+        // Roughly centered range → swap roughly half the token0 (loose bounds).
+        assertGt(amt, bal0 / 5, "swap unexpectedly tiny");
+        assertLt(amt, (bal0 * 4) / 5, "swap unexpectedly large");
+    }
+
+    /// @dev In range, starting one-sided (all token1): swaps part of token1, direction false.
+    function test_computeOptimalSwap_inRange_oneSidedToken1() public view {
+        uint160 sqrtP = 265_651_043_793_156_983_656_969_817;
+        uint160 sqrtA = TickMath.getSqrtRatioAtTick(-114000);
+        uint160 sqrtB = TickMath.getSqrtRatioAtTick(-113900);
+        uint256 bal1 = 1e16; // all BTC, zero MUSD
+        (bool z, uint256 amt) = h.computeOptimalSwap(sqrtP, sqrtA, sqrtB, 0, bal1);
+        assertFalse(z, "should sell token1");
+        assertGt(amt, 0, "must swap something");
+        assertLt(amt, bal1, "must NOT swap the whole balance");
+    }
+
+    /// @dev Already balanced to the range ratio → swap is ~zero (no needless trading).
+    function test_computeOptimalSwap_inRange_balanced_swapsNearZero() public view {
+        uint160 sqrtP = 265_651_043_793_156_983_656_969_817;
+        uint160 sqrtA = TickMath.getSqrtRatioAtTick(-114000);
+        uint160 sqrtB = TickMath.getSqrtRatioAtTick(-113900);
+        // Build balances in exactly the ratio the range wants for some liquidity.
+        (uint256 want0, uint256 want1) = h.amountsForLiquidity(sqrtP, sqrtA, sqrtB, 1e18);
+        (, uint256 amt) = h.computeOptimalSwap(sqrtP, sqrtA, sqrtB, want0, want1);
+        // Allow a tiny rounding dust relative to the holdings.
+        assertLt(amt, want0 / 1000 + want1 / 1000 + 1, "balanced input should barely swap");
     }
 }

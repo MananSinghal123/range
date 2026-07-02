@@ -3,6 +3,7 @@ pragma solidity ^0.8.13;
 
 import {Math} from "@openzeppelin/contracts/utils/math/Math.sol";
 import {LiquidityAmounts, TickMath} from "./libraries/UniswapV3Math.sol";
+import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 import {OracleLib} from "./libraries/OracleLib.sol";
 import {IDexAdapter} from "./adapters/interfaces/IDexAdapter.sol";
@@ -128,7 +129,8 @@ contract VaultLens {
         address adapter = v.dexAdapter();
         address poolAddr = v.pool();
 
-        (int24 lo, int24 hi, uint128 liq, , , , ) = _positions(v, tid);
+        (int24 lo, int24 hi, uint128 liq, , , address token0, address token1) =
+            _positions(v, tid);
         (uint160 sqrtPriceX96, ) = IDexAdapter(adapter).slot0(poolAddr);
 
         (uint256 amount0, uint256 amount1) = LiquidityAmounts
@@ -138,6 +140,13 @@ contract VaultLens {
                 TickMath.getSqrtRatioAtTick(hi),
                 liq
             );
+
+        // Include tokens already idle in the vault (deposits + prior leftovers). When the
+        // vault rebalances it removes the position and holds principal + idle together, so
+        // the optimal swap must be computed against the combined balances — not the
+        // position alone (which would ignore idle tokens and over-swap).
+        uint256 bal0 = amount0 + IERC20(token0).balanceOf(vault);
+        uint256 bal1 = amount1 + IERC20(token1).balanceOf(vault);
 
         int24 twapTick = OracleLib.getTwapTick(poolAddr, v.twapSeconds());
         int24 spacing = IDexAdapter(adapter).tickSpacing(poolAddr);
@@ -149,8 +158,8 @@ contract VaultLens {
                 sqrtPriceX96,
                 TickMath.getSqrtRatioAtTick(rLo),
                 TickMath.getSqrtRatioAtTick(rHi),
-                amount0,
-                amount1
+                bal0,
+                bal1
             );
     }
 

@@ -1,5 +1,7 @@
 "use client";
 
+import { useRouter, useSearchParams } from "next/navigation";
+import { Suspense, useCallback } from "react";
 import { Header } from "@/components/ui/header";
 import { VaultStats } from "@/components/VaultStats";
 import { DepositWithdraw } from "@/components/DepositWithdraw";
@@ -7,10 +9,28 @@ import { PriceRangeCard } from "@/components/PriceRangeCard";
 import { UserPosition } from "@/components/UserPosition";
 import { RebalanceHistory } from "@/components/RebalanceHistory";
 import { Footer } from "@/components/ui/footer";
+import { StrategySelector } from "@/components/StrategySelector";
 import { useVaultPage } from "@/hooks/useVaultPage";
-
+import {
+  STRATEGIES,
+  resolveStrategy,
+  type StrategyKey,
+} from "@/lib/strategies";
 
 export default function Home() {
+  return (
+    <Suspense fallback={null}>
+      <VaultPageContent />
+    </Suspense>
+  );
+}
+
+function VaultPageContent() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const strategyKey = resolveStrategy(searchParams.get("strategy"));
+  const vaultAddress = STRATEGIES[strategyKey].vaultAddress;
+
   const {
     isConnected,
     sym0,
@@ -27,24 +47,37 @@ export default function Home() {
     totalFee0,
     tickLower,
     tickUpper,
-  } = useVaultPage();
+  } = useVaultPage(vaultAddress);
+
+  const handleStrategySelect = useCallback(
+    (key: StrategyKey) => {
+      router.push(`?strategy=${key}`);
+    },
+    [router],
+  );
 
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-dvh">
       <Header />
 
-      <main className="max-w-5xl mx-auto px-5 py-8 space-y-6">
-        <div>
+      <main className="max-w-5xl mx-auto px-4 sm:px-5 py-6 sm:py-8 space-y-5 sm:space-y-6">
+        <div className="animate-in">
           <h1
-            className="text-2xl font-semibold tracking-tight"
+            className="text-[26px] sm:text-3xl font-bold tracking-tight"
             style={{ color: "var(--text)" }}
           >
             {sym0} / {sym1} Vault
           </h1>
-          <p className="mt-1 text-sm" style={{ color: "var(--text-2)" }}>
+          <p className="mt-1.5 text-sm sm:text-[15px]" style={{ color: "var(--text-2)" }}>
             Deposit tokens and earn trading fees automatically.
           </p>
         </div>
+
+        {/* Strategy selector */}
+        <StrategySelector
+          selected={strategyKey}
+          onSelect={handleStrategySelect}
+        />
 
         {/* Stats — full width */}
         <VaultStats
@@ -64,9 +97,10 @@ export default function Home() {
 
         {/* 2-column layout */}
         <div className="grid grid-cols-1 lg:grid-cols-[1fr_360px] gap-6 items-start">
-          {/* Left: Deposit/Withdraw + Price Range (renders second on mobile) */}
-          <div className="space-y-6 order-2 lg:order-1">
+          {/* Left: Deposit/Withdraw + Price Range */}
+          <div className="space-y-6">
             <DepositWithdraw
+              vaultAddress={vaultAddress}
               paused={vault.paused}
               initialized={vault.initialized}
               token0Address={vault.token0Address}
@@ -96,9 +130,10 @@ export default function Home() {
             />
           </div>
 
-          {/* Right: User position + History (renders first on mobile) */}
-          <div className="space-y-6 order-1 lg:order-2">
+          {/* Right: User position + History */}
+          <div className="space-y-6">
             <UserPosition
+              vaultAddress={vaultAddress}
               shares={user.shares}
               symbol0={sym0}
               decimals0={d0}
