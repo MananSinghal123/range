@@ -2,7 +2,7 @@
 pragma solidity ^0.8.13;
 
 import "../BaseTest.sol";
-import {TickMath} from "@uniswap/v3-core/contracts/libraries/TickMath.sol";
+import {TickMath} from "../../src/libraries/UniswapV3Math.sol";
 
 contract EdgeCaseTest is BaseTest {
     int24 internal LO;

@@ -2,11 +2,8 @@
 pragma solidity ^0.8.13;
 
 import "forge-std/Test.sol";
-import "@uniswap/v3-core/contracts/libraries/TickMath.sol";
-import {
-    LiquidityAmounts
-} from "@uniswap/v3-periphery/contracts/libraries/LiquidityAmounts.sol";
 import {VaultMath} from "../../src/libraries/VaultMath.sol";
+import {TickMath} from "../../src/libraries/UniswapV3Math.sol";
 
 /// @dev External wrapper so the internal (inlined) library functions can be invoked across a
 ///      call boundary — required for `vm.expectRevert` and to exercise the complex internal math.

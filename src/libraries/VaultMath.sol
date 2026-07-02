@@ -1,9 +1,8 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.13;
 
-import "@uniswap/v3-core/contracts/libraries/TickMath.sol";
-import "@uniswap/v3-periphery/contracts/libraries/LiquidityAmounts.sol";
 import "@openzeppelin/contracts/utils/math/Math.sol";
+import {LiquidityAmounts, TickMath} from "./UniswapV3Math.sol";
 
 library VaultMath {
     error InvalidPoolPrice();

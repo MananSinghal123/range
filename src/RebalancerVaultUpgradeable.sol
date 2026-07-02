@@ -30,11 +30,7 @@ import {IStrategy} from "./strategies/interfaces/IStrategy.sol";
 import {VaultStorageLib} from "./libraries/VaultStorageLib.sol";
 import {OracleLib} from "./libraries/OracleLib.sol";
 import {VaultMath} from "./libraries/VaultMath.sol";
-
-import {TickMath} from "@uniswap/v3-core/contracts/libraries/TickMath.sol";
-import {
-    LiquidityAmounts
-} from "@uniswap/v3-periphery/contracts/libraries/LiquidityAmounts.sol";
+import {LiquidityAmounts, TickMath} from "./libraries/UniswapV3Math.sol";
 
 contract RebalancerVaultUpgradeable is
     Initializable,

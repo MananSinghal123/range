@@ -2,11 +2,8 @@
 pragma solidity ^0.8.13;
 
 import {Math} from "@openzeppelin/contracts/utils/math/Math.sol";
+import {LiquidityAmounts, TickMath} from "./libraries/UniswapV3Math.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import {TickMath} from "@uniswap/v3-core/contracts/libraries/TickMath.sol";
-import {
-    LiquidityAmounts
-} from "@uniswap/v3-periphery/contracts/libraries/LiquidityAmounts.sol";
 
 import {OracleLib} from "./libraries/OracleLib.sol";
 import {IDexAdapter} from "./adapters/interfaces/IDexAdapter.sol";
